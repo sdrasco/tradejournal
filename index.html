@@ -42,8 +42,21 @@
       border-bottom: 1px solid var(--card-border);
     }
     .bar { display: grid; grid-template-columns: 64px 1fr auto; gap: 16px; align-items: center; padding: 12px 0; }
-    .logo { width: 56px; height: 56px; border-radius: 10px; background: var(--panel); display: grid; place-items: center; box-shadow: 0 2px 6px var(--shadow); }
-    .logo span { font-size: 22px; }
+    .logo {
+      width: 56px;
+      height: 56px;
+      border-radius: 10px;
+      background: var(--panel);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 2px 6px var(--shadow);
+      overflow: hidden;
+    }
+    .logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
     .donate {
       font-size: 12px; color: var(--muted);
       margin-top: 4px;
@@ -114,7 +127,7 @@
   <header>
     <div class="container bar">
       <div class="logo" title="Trade Log">
-        <span>📈</span>
+        <img src="logo_small.png" srcset="logo_small.png 1x, logo.png 2x" alt="Trade Log logo" />
       </div>
       <div>
         <div style="font-weight: 700; font-size: 18px;">Trade Log — Stocks & Options</div>
