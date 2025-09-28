@@ -99,6 +99,8 @@
     .card { border: 2px solid var(--ink); border-radius: var(--radius); background: var(--panel); padding: 16px; display: grid; gap: 10px; }
     .card-header { display: flex; align-items: baseline; justify-content: space-between; }
     .chip { background: var(--accent-2); border: 2px solid var(--ink-dark); padding: 3px 10px; border-radius: 999px; font-size: 12px; color: #2f4f4b; }
+    .rating-badge { display: inline-flex; align-items: center; justify-content: center; padding: 4px 6px; border-radius: var(--radius-sm); border: 2px solid var(--ink); background: var(--panel-2); }
+    .rating-badge img { width: 48px; height: 24px; object-fit: contain; display: block; }
     .bad { color: var(--danger); font-weight: 600; }
     .good { color: var(--success); font-weight: 600; }
     .warn { color: var(--warn); font-weight: 600; }
@@ -192,12 +194,11 @@
             <label>Trade rating</label>
             <select id="rating">
               <option value="">—</option>
-              <option value="ooo">ooo</option>
-              <option value="oo">oo</option>
-              <option value="o">o</option>
-              <option value="*">*</option>
-              <option value="**">**</option>
-              <option value="***">***</option>
+              <option value="two_poop">💩💩 Two poops</option>
+              <option value="one_poop">💩 One poop</option>
+              <option value="meh">😐 Meh</option>
+              <option value="one_star">⭐ One star</option>
+              <option value="two_star">⭐⭐ Two stars</option>
             </select>
           </div>
         </div>
@@ -281,6 +282,23 @@
   let trades = [];
   let editingId = null;
 
+  const RATING_INFO = {
+    two_poop: { label: 'Two poops', image: 'images/two_poop.png', score: 1 },
+    one_poop: { label: 'One poop', image: 'images/one_poop.png', score: 2 },
+    meh: { label: 'Meh', image: 'images/meh.png', score: 3 },
+    one_star: { label: 'One star', image: 'images/one_star.png', score: 4 },
+    two_star: { label: 'Two stars', image: 'images/two_star.png', score: 5 },
+  };
+
+  const LEGACY_RATING_MAP = {
+    ooo: 'two_poop',
+    oo: 'one_poop',
+    o: 'meh',
+    '*': 'meh',
+    '**': 'one_star',
+    '***': 'two_star',
+  };
+
   // Elements
   const appEl = document.getElementById('app');
   const metricEquity = document.getElementById('metric-equity');
@@ -324,7 +342,7 @@
   function load() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      trades = raw ? JSON.parse(raw) : [];
+      trades = (raw ? JSON.parse(raw) : []).map(migrateTrade);
     } catch (e) {
       trades = [];
     }
@@ -367,9 +385,19 @@
     return { netCost, netReturn, fractional, hold };
   }
 
+  function normalizeRating(value) {
+    if (!value) return '';
+    if (RATING_INFO[value]) return value;
+    return LEGACY_RATING_MAP[value] || '';
+  }
+
+  function ratingInfo(value) {
+    return value ? (RATING_INFO[value] || null) : null;
+  }
+
   function ratingScore(r) {
-    if (!r) return 0;
-    if (r === 'ooo') return 1; if (r === 'oo') return 2; if (r === 'o') return 3; if (r === '*') return 4; if (r === '**') return 5; if (r === '***') return 6; return 0;
+    const info = ratingInfo(normalizeRating(r));
+    return info ? info.score : 0;
   }
 
   function summarize() {
@@ -492,8 +520,8 @@
     left.appendChild(title); left.appendChild(sub);
     const chips = document.createElement('div'); chips.style.display='flex'; chips.style.gap='6px';
     const chip1 = document.createElement('span'); chip1.className='chip'; chip1.textContent = t.type;
-    const chip2 = document.createElement('span'); chip2.className='chip'; chip2.textContent = t.rating || '—';
-    chips.appendChild(chip1); chips.appendChild(chip2);
+    chips.appendChild(chip1);
+    chips.appendChild(createRatingBadge(t.rating));
     right.appendChild(chips);
     header.appendChild(left); header.appendChild(right);
     card.appendChild(header);
@@ -505,19 +533,11 @@
     row1.appendChild(kv('Fractional', spanClass(fmtPct(d.fractional), d.fractional == null ? 'muted' : (d.fractional >= 0 ? 'good' : 'bad'))));
     card.appendChild(row1);
 
-    const row2 = document.createElement('div'); row2.className = 'row';
+    const row2 = document.createElement('div'); row2.className = 'row-3';
     row2.appendChild(kv('Buy', currency(Number(t.buyPrice) || 0)));
     row2.appendChild(kv('Sell', currency(t.sellPrice === undefined || t.sellPrice === null || t.sellPrice === '' ? null : Number(t.sellPrice))));
+    row2.appendChild(kv('Fees', currency(Number(t.fees || 0))));
     card.appendChild(row2);
-
-    const row3 = document.createElement('div'); row3.className='row';
-    row3.appendChild(kv('Fees', currency(Number(t.fees || 0))));
-    if (t.type === 'option') {
-      row3.appendChild(kv('Contract', `${t.optionType || ''} ${t.strike ?? ''} exp ${t.expiration || '—'}`));
-    } else {
-      row3.appendChild(kv('—', ''));
-    }
-    card.appendChild(row3);
 
     if (t.notes) {
       const n = document.createElement('div'); n.className='note'; n.textContent = t.notes; card.appendChild(n);
@@ -538,6 +558,26 @@
     if (vNodeOrText instanceof Node) v.appendChild(vNodeOrText); else v.textContent = vNodeOrText;
     c.appendChild(v);
     return c;
+  }
+
+  function createRatingBadge(value) {
+    const normalized = normalizeRating(value);
+    const info = ratingInfo(normalized);
+    if (!info) {
+      const empty = document.createElement('span');
+      empty.className = 'chip';
+      empty.textContent = '—';
+      return empty;
+    }
+    const wrap = document.createElement('span');
+    wrap.className = 'rating-badge';
+    wrap.title = info.label;
+    wrap.dataset.rating = normalized;
+    const img = document.createElement('img');
+    img.src = info.image;
+    img.alt = info.label;
+    wrap.appendChild(img);
+    return wrap;
   }
 
   function resetForm() {
@@ -574,7 +614,7 @@
       editingId = id;
       modalTitle.textContent = 'Edit Trade';
       deleteTradeBtn.classList.remove('hidden');
-      typeEl.value = t.type || 'stock'; ratingEl.value = t.rating || '';
+      typeEl.value = t.type || 'stock'; ratingEl.value = normalizeRating(t.rating) || '';
       tickerEl.value = t.ticker || '';
       underlyingEl.value = t.underlying || '';
       optionTypeEl.value = t.optionType || 'Call';
@@ -600,7 +640,7 @@
     const base = {
       id: editingId || uid(),
       type: typeEl.value,
-      rating: ratingEl.value || '',
+      rating: normalizeRating(ratingEl.value || ''),
       buyPrice: numOrNull(buyPriceEl.value),
       sellPrice: numOrNull(sellPriceEl.value),
       fees,
@@ -709,6 +749,7 @@
     if (out.buyPrice !== null && out.buyPrice !== undefined) out.buyPrice = Number(out.buyPrice);
     if (out.sellPrice !== null && out.sellPrice !== undefined) out.sellPrice = Number(out.sellPrice);
     out.fees = Number(out.fees || 0);
+    out.rating = normalizeRating(out.rating);
     return out;
   }
 
