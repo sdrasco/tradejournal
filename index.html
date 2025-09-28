@@ -556,7 +556,11 @@
     }
 
     const actions = document.createElement('div'); actions.className = 'actions';
-    const edit = document.createElement('button'); edit.textContent = 'Edit'; edit.addEventListener('click', () => openModal(t.id));
+    const edit = document.createElement('button');
+    edit.textContent = '✏️';
+    edit.setAttribute('aria-label', 'Edit');
+    edit.title = 'Edit';
+    edit.addEventListener('click', () => openModal(t.id));
     actions.appendChild(edit);
     card.appendChild(actions);
     return card;
