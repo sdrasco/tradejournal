@@ -13,6 +13,7 @@
       --muted: #8b7a6c;
       --text: #4a3a2f;
       --accent: #ff9a7a;
+      --link: #a8441f;
       --accent-2: #7accc2;
       --danger: #f28f8f;
       --warn: #ffbd80;
@@ -34,8 +35,14 @@
       font-family: "Quicksand", "Segoe UI Rounded", "Comic Neue", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       line-height: 1.4;
     }
-    a { color: var(--accent); text-decoration: underline; text-decoration-style: wavy; }
-    a:hover { text-decoration: underline; }
+    a {
+      color: var(--link);
+      text-decoration: underline;
+      text-decoration-color: currentColor;
+      text-decoration-style: solid;
+      text-decoration-thickness: 2px;
+    }
+    a:hover { text-decoration-thickness: 3px; }
     .container { max-width: 1100px; margin: 0 auto; padding: 16px; }
     header {
       position: sticky; top: 0; z-index: 5;
