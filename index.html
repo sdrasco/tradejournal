@@ -59,10 +59,6 @@
       height: 100%;
       object-fit: contain;
     }
-    .donate {
-      font-size: 12px; color: var(--muted);
-      margin-top: 4px;
-    }
     .metrics { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
     .metric { background: var(--panel-2); padding: 8px 12px; border-radius: var(--radius-sm); border: 2px solid var(--ink); font-size: 13px; }
     .controls { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
@@ -136,13 +132,10 @@
       </div>
       <div>
         <div style="font-weight: 700; font-size: 18px;">Trade Log — Stocks & Options</div>
-        <div class="donate">
-          <a href="https://buymeacoffee.com/stevedrasco" target="_blank" rel="noopener noreferrer">If this helps your trading, maybe throw its creator a bone.</a>
-        </div>
       </div>
       <div class="metrics">
-        <div class="metric" id="metric-total">Completed: 0</div>
-        <div class="metric" id="metric-open">Open: 0</div>
+        <div class="metric" id="metric-equity">Total equity: $0.00</div>
+        <div class="metric" id="metric-exposure">Current exposure: $0.00</div>
       </div>
     </div>
     <div class="container toolbar">
@@ -290,8 +283,8 @@
 
   // Elements
   const appEl = document.getElementById('app');
-  const metricTotal = document.getElementById('metric-total');
-  const metricOpen = document.getElementById('metric-open');
+  const metricEquity = document.getElementById('metric-equity');
+  const metricExposure = document.getElementById('metric-exposure');
   const searchEl = document.getElementById('search');
   const sortByEl = document.getElementById('sortBy');
   const groupByEl = document.getElementById('groupBy');
@@ -380,10 +373,15 @@
   }
 
   function summarize() {
-    const c = trades.filter(t => t.sellTime).length;
-    const o = trades.filter(t => !t.sellTime).length;
-    document.getElementById('metric-total').textContent = `Completed: ${c}`;
-    document.getElementById('metric-open').textContent = `Open: ${o}`;
+    let totalEquity = 0;
+    let exposure = 0;
+    for (const t of trades) {
+      const derived = computeDerived(t);
+      if (t.sellTime && derived.netReturn !== null) totalEquity += derived.netReturn;
+      if (!t.sellTime) exposure += derived.netCost;
+    }
+    metricEquity.textContent = `Total equity: ${currency(totalEquity)}`;
+    metricExposure.textContent = `Current exposure: ${currency(exposure)}`;
   }
 
   function normalizeForSearch(s) { return (s || '').toLowerCase(); }
