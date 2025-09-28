@@ -519,18 +519,25 @@
     sub.textContent = `Buy: ${bt ? bt.toLocaleString() : '—'}  ·  Sell: ${st ? st.toLocaleString() : '—'}  ·  Hold: ${d.hold}`;
     left.appendChild(title); left.appendChild(sub);
     const chips = document.createElement('div'); chips.style.display='flex'; chips.style.gap='6px';
-    const chip1 = document.createElement('span'); chip1.className='chip'; chip1.textContent = t.type;
-    chips.appendChild(chip1);
     chips.appendChild(createRatingBadge(t.rating));
     right.appendChild(chips);
     header.appendChild(left); header.appendChild(right);
     card.appendChild(header);
 
-    const row1 = document.createElement('div'); row1.className = 'row-3';
+    const row1 = document.createElement('div'); row1.className = 'row';
     const netReturnCls = d.netReturn == null ? 'muted' : (d.netReturn >= 0 ? 'good' : 'bad');
+    const fractionalCls = d.fractional == null ? 'muted' : (d.fractional >= 0 ? 'good' : 'bad');
+    const returnWrap = document.createElement('div');
+    const netLine = document.createElement('div');
+    netLine.append('Net: ');
+    netLine.appendChild(spanClass(currency(d.netReturn), netReturnCls));
+    const fracLine = document.createElement('div');
+    fracLine.append('Fractional: ');
+    fracLine.appendChild(spanClass(fmtPct(d.fractional), fractionalCls));
+    returnWrap.appendChild(netLine);
+    returnWrap.appendChild(fracLine);
     row1.appendChild(kv('Net Cost', currency(d.netCost)));
-    row1.appendChild(kv('Net Return', spanClass(currency(d.netReturn), netReturnCls)));
-    row1.appendChild(kv('Fractional', spanClass(fmtPct(d.fractional), d.fractional == null ? 'muted' : (d.fractional >= 0 ? 'good' : 'bad'))));
+    row1.appendChild(kv('Return', returnWrap));
     card.appendChild(row1);
 
     const row2 = document.createElement('div'); row2.className = 'row-3';
