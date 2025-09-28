@@ -1,0 +1,722 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trade Log — Stocks & Options</title>
+  <meta name="description" content="Local-first trading log for stocks and options. Import/export JSON. No data leaves your device." />
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #131a21;
+      --panel-2: #0d1217;
+      --muted: #a9b4bf;
+      --text: #e6edf3;
+      --accent: #5ba6ff;
+      --accent-2: #7bdcb5;
+      --danger: #ff6b6b;
+      --warn: #ffd166;
+      --success: #68d391;
+      --card-border: #212b36;
+      --chip: #1b2530;
+      --input: #0b1117;
+      --shadow: rgba(0,0,0,0.35);
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      line-height: 1.35;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 16px; }
+    header {
+      position: sticky; top: 0; z-index: 5;
+      background: linear-gradient(180deg, rgba(15,20,25,0.95) 0%, rgba(15,20,25,0.8) 100%);
+      backdrop-filter: saturate(120%) blur(8px);
+      border-bottom: 1px solid var(--card-border);
+    }
+    .bar { display: grid; grid-template-columns: 64px 1fr auto; gap: 16px; align-items: center; padding: 12px 0; }
+    .logo { width: 56px; height: 56px; border-radius: 10px; background: var(--panel); display: grid; place-items: center; box-shadow: 0 2px 6px var(--shadow); }
+    .logo span { font-size: 22px; }
+    .donate {
+      font-size: 12px; color: var(--muted);
+      margin-top: 4px;
+    }
+    .metrics { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .metric { background: var(--chip); padding: 8px 10px; border-radius: var(--radius-sm); border: 1px solid var(--card-border); font-size: 13px; }
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .controls > * { height: 36px; }
+    input[type="text"], select {
+      background: var(--input);
+      color: var(--text);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      outline: none;
+    }
+    input[type="text"]::placeholder { color: #7a8793; }
+    button {
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    button:hover { filter: brightness(1.05); }
+    button.primary { background: linear-gradient(180deg, #1a2633, #16202b); border-color: #22303d; }
+    button.danger { background: linear-gradient(180deg, #2a1616, #231212); border-color: #3a1e1e; color: #ffb3b3; }
+
+    .toolbar { display: grid; grid-template-columns: 1fr auto; gap: 12px; margin-top: 4px; }
+    .left-tools { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .right-tools { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .group-header { display: flex; align-items: center; justify-content: space-between; margin: 18px 0 8px; padding: 8px 10px; border: 1px solid var(--card-border); border-radius: var(--radius-sm); background: var(--panel-2); box-shadow: 0 2px 4px var(--shadow); }
+    .group-title { font-weight: 600; color: var(--muted); }
+
+    .cards { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    @media (min-width: 720px) { .cards { grid-template-columns: 1fr 1fr; } }
+    .card { border: 1px solid var(--card-border); border-radius: var(--radius); background: var(--panel); box-shadow: 0 4px 10px var(--shadow); padding: 12px; display: grid; gap: 8px; }
+    .card-header { display: flex; align-items: baseline; justify-content: space-between; }
+    .chip { background: var(--chip); border: 1px solid var(--card-border); padding: 2px 8px; border-radius: 999px; font-size: 12px; color: var(--muted); }
+    .bad { color: var(--danger); }
+    .good { color: var(--success); }
+    .warn { color: var(--warn); }
+    .muted { color: var(--muted); }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .kv { background: var(--panel-2); border: 1px solid var(--card-border); border-radius: var(--radius-sm); padding: 8px; font-size: 13px; }
+    .kv b { color: #c9d4df; font-weight: 600; }
+    .note { font-size: 13px; color: var(--muted); background: var(--panel-2); border: 1px solid var(--card-border); padding: 8px; border-radius: var(--radius-sm); }
+    .actions { display: flex; gap: 6px; justify-content: flex-end; }
+
+    .footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 24px 0 40px; color: var(--muted); font-size: 12px; }
+
+    dialog[open] { border: 1px solid var(--card-border); border-radius: 14px; background: var(--panel); color: var(--text); width: min(740px, 96vw); box-shadow: 0 24px 80px rgba(0,0,0,0.55); }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--card-border); }
+    .modal-body { padding: 14px; display: grid; gap: 10px; }
+    .form-row { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+    .form-row-3 { display: grid; gap: 10px; grid-template-columns: 1fr 1fr 1fr; }
+    label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; }
+    .field { display: flex; flex-direction: column; }
+    textarea { background: var(--input); color: var(--text); border: 1px solid var(--card-border); border-radius: var(--radius-sm); padding: 8px 10px; min-height: 72px; resize: vertical; }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; padding: 12px 14px; border-top: 1px solid var(--card-border); }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container bar">
+      <div class="logo" title="Trade Log">
+        <span>📈</span>
+      </div>
+      <div>
+        <div style="font-weight: 700; font-size: 18px;">Trade Log — Stocks & Options</div>
+        <div class="donate">
+          <a href="https://buymeacoffee.com/stevedrasco" target="_blank" rel="noopener noreferrer">If this helps your trading, maybe throw its creator a bone.</a>
+        </div>
+      </div>
+      <div class="metrics">
+        <div class="metric" id="metric-total">Completed: 0</div>
+        <div class="metric" id="metric-open">Open: 0</div>
+      </div>
+    </div>
+    <div class="container toolbar">
+      <div class="left-tools">
+        <input id="search" type="text" placeholder="Search tickers and notes" />
+        <select id="sortBy" title="Sort">
+          <option value="-buyTime">Newest first</option>
+          <option value="buyTime">Oldest first</option>
+          <option value="ticker">Ticker A→Z</option>
+          <option value="-netReturn">Net return ↓</option>
+          <option value="netReturn">Net return ↑</option>
+          <option value="-fractional">Fractional return ↓</option>
+          <option value="fractional">Fractional return ↑</option>
+          <option value="-rating">Rating (best first)</option>
+        </select>
+        <select id="groupBy" title="Group">
+          <option value="none">Group: None</option>
+          <option value="day">Group: Day</option>
+          <option value="week">Group: Week</option>
+        </select>
+      </div>
+      <div class="right-tools">
+        <button class="primary" id="addBtn">+ Add trade</button>
+        <input id="importFile" type="file" accept="application/json" class="hidden" />
+        <button id="importBtn">Import JSON</button>
+        <button id="exportBtn">Export JSON</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container" id="app" style="margin-top: 16px;"></main>
+
+  <div class="container footer">
+    <div>We don't collect or store any data. Everything happens on your device.</div>
+    <button class="danger" id="clearBtn">Clear stored data</button>
+  </div>
+
+  <dialog id="tradeModal">
+    <form method="dialog" id="tradeForm">
+      <div class="modal-head">
+        <div id="modalTitle">Add Trade</div>
+        <button type="button" id="closeModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="field">
+            <label>Type</label>
+            <select id="type" required>
+              <option value="stock">Stock</option>
+              <option value="option">Option</option>
+            </select>
+          </div>
+          <div class="field" id="ratingField">
+            <label>Trade rating</label>
+            <select id="rating">
+              <option value="">—</option>
+              <option value="ooo">ooo</option>
+              <option value="oo">oo</option>
+              <option value="o">o</option>
+              <option value="*">*</option>
+              <option value="**">**</option>
+              <option value="***">***</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row" id="stockRow">
+          <div class="field">
+            <label>Ticker</label>
+            <input id="ticker" type="text" placeholder="AAPL" />
+          </div>
+          <div class="field">
+            <label>Fees (total)</label>
+            <input id="fees" type="number" step="0.01" min="0" value="0" />
+          </div>
+        </div>
+
+        <div class="form-row hidden" id="optionRow1">
+          <div class="field">
+            <label>Underlying Ticker</label>
+            <input id="underlying" type="text" placeholder="AAPL" />
+          </div>
+          <div class="field">
+            <label>Put/Call</label>
+            <select id="optionType">
+              <option value="Call">Call</option>
+              <option value="Put">Put</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row hidden" id="optionRow2">
+          <div class="field">
+            <label>Strike</label>
+            <input id="strike" type="number" step="0.01" />
+          </div>
+          <div class="field">
+            <label>Expiration</label>
+            <input id="expiration" type="date" />
+          </div>
+        </div>
+
+        <div class="form-row-3">
+          <div class="field">
+            <label>Buy price</label>
+            <input id="buyPrice" type="number" step="0.01" />
+          </div>
+          <div class="field">
+            <label>Sell price</label>
+            <input id="sellPrice" type="number" step="0.01" />
+          </div>
+          <div class="field">
+            <label>Fees (total)</label>
+            <input id="fees2" type="number" step="0.01" min="0" value="0" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label>Buy Time/Date</label>
+            <input id="buyTime" type="datetime-local" />
+          </div>
+          <div class="field">
+            <label>Sell Time/Date</label>
+            <input id="sellTime" type="datetime-local" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Notes</label>
+          <textarea id="notes" placeholder="What brilliant idea sparked this one?"></textarea>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="submit" class="primary" id="saveTrade">Save</button>
+        <button type="button" id="deleteTrade" class="danger hidden">Delete</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+  // Local-first Trade Log — all data stays in localStorage
+  const STORAGE_KEY = 'tradeLog:trades:v1';
+  /** @type {Array<any>} */
+  let trades = [];
+  let editingId = null;
+
+  // Elements
+  const appEl = document.getElementById('app');
+  const metricTotal = document.getElementById('metric-total');
+  const metricOpen = document.getElementById('metric-open');
+  const searchEl = document.getElementById('search');
+  const sortByEl = document.getElementById('sortBy');
+  const groupByEl = document.getElementById('groupBy');
+  const addBtn = document.getElementById('addBtn');
+  const exportBtn = document.getElementById('exportBtn');
+  const importBtn = document.getElementById('importBtn');
+  const importFile = document.getElementById('importFile');
+  const clearBtn = document.getElementById('clearBtn');
+
+  const modal = document.getElementById('tradeModal');
+  const modalTitle = document.getElementById('modalTitle');
+  const closeModalBtn = document.getElementById('closeModal');
+  const deleteTradeBtn = document.getElementById('deleteTrade');
+
+  // Form fields
+  const typeEl = document.getElementById('type');
+  const ratingEl = document.getElementById('rating');
+  const tickerEl = document.getElementById('ticker');
+  const feesEl = document.getElementById('fees');
+  const underlyingEl = document.getElementById('underlying');
+  const optionTypeEl = document.getElementById('optionType');
+  const strikeEl = document.getElementById('strike');
+  const expirationEl = document.getElementById('expiration');
+  const buyPriceEl = document.getElementById('buyPrice');
+  const sellPriceEl = document.getElementById('sellPrice');
+  const fees2El = document.getElementById('fees2');
+  const buyTimeEl = document.getElementById('buyTime');
+  const sellTimeEl = document.getElementById('sellTime');
+  const notesEl = document.getElementById('notes');
+
+  const stockRow = document.getElementById('stockRow');
+  const optionRow1 = document.getElementById('optionRow1');
+  const optionRow2 = document.getElementById('optionRow2');
+
+  function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+  function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(trades)); }
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      trades = raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      trades = [];
+    }
+  }
+
+  function currency(v) {
+    if (v === undefined || v === null || isNaN(v)) return '—';
+    try { return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v); } catch { return `$${v.toFixed?.(2) ?? v}`; }
+  }
+
+  function fmtPct(v) {
+    if (v === undefined || v === null || !isFinite(v)) return '—';
+    return (v >= 0 ? '+' : '') + (v * 100).toFixed(2) + '%';
+  }
+
+  function parseDt(s) { return s ? new Date(s) : null; }
+  function isoDate(d) { return d.toISOString().slice(0,10); }
+
+  function duration(a, b) {
+    if (!a || !b) return '—';
+    const ms = Math.max(0, b - a);
+    const days = Math.floor(ms / 86400000);
+    const hrs = Math.floor((ms % 86400000) / 3600000);
+    const mins = Math.floor((ms % 3600000) / 60000);
+    if (days) return `${days}d ${hrs}h`;
+    if (hrs) return `${hrs}h ${mins}m`;
+    return `${mins}m`;
+  }
+
+  function computeDerived(t) {
+    const buy = Number(t.buyPrice) || 0;
+    const sell = t.sellPrice !== undefined && t.sellPrice !== null && t.sellPrice !== '' ? Number(t.sellPrice) : null;
+    const fees = Number(t.fees || 0);
+    const netCost = buy + fees;
+    const netReturn = sell === null ? null : (sell - buy - fees);
+    const fractional = sell === null || netCost === 0 ? null : (netReturn / netCost);
+    const buyT = t.buyTime ? new Date(t.buyTime) : null;
+    const sellT = t.sellTime ? new Date(t.sellTime) : null;
+    const hold = duration(buyT, sellT || new Date());
+    return { netCost, netReturn, fractional, hold };
+  }
+
+  function ratingScore(r) {
+    if (!r) return 0;
+    if (r === 'ooo') return 1; if (r === 'oo') return 2; if (r === 'o') return 3; if (r === '*') return 4; if (r === '**') return 5; if (r === '***') return 6; return 0;
+  }
+
+  function summarize() {
+    const c = trades.filter(t => t.sellTime).length;
+    const o = trades.filter(t => !t.sellTime).length;
+    document.getElementById('metric-total').textContent = `Completed: ${c}`;
+    document.getElementById('metric-open').textContent = `Open: ${o}`;
+  }
+
+  function normalizeForSearch(s) { return (s || '').toLowerCase(); }
+
+  function filteredSortedTrades() {
+    const q = normalizeForSearch(searchEl.value);
+    let arr = trades.filter(t => {
+      const hay = [t.ticker, t.underlying, t.notes].map(normalizeForSearch).join(' ');
+      return hay.includes(q);
+    });
+    // compute derived temp fields used in sorting
+    arr = arr.map(t => ({ ...t, _d: computeDerived(t) }));
+    const key = sortByEl.value;
+    const desc = key.startsWith('-');
+    const k = desc ? key.slice(1) : key;
+    const get = (t) => {
+      if (k === 'netReturn') return t._d.netReturn ?? -Infinity;
+      if (k === 'fractional') return t._d.fractional ?? -Infinity;
+      if (k === 'rating') return ratingScore(t.rating);
+      if (k === 'ticker') return (t.ticker || t.underlying || '').toUpperCase();
+      if (k === 'buyTime') return t.buyTime ? new Date(t.buyTime).getTime() : 0;
+      return 0;
+    };
+    arr.sort((a,b) => {
+      const av = get(a), bv = get(b);
+      if (typeof av === 'string' && typeof bv === 'string') return desc ? bv.localeCompare(av) : av.localeCompare(bv);
+      return desc ? (bv - av) : (av - bv);
+    });
+    return arr;
+  }
+
+  function weekKey(date) {
+    // ISO week number
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+    const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+    return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2,'0')}`;
+  }
+
+  function groupTrades(arr) {
+    const mode = groupByEl.value;
+    if (mode === 'none') return [{ key: 'All trades', items: arr }];
+    const map = new Map();
+    for (const t of arr) {
+      const dt = t.buyTime ? new Date(t.buyTime) : null;
+      const key = !dt ? 'Undated' : (mode === 'day' ? isoDate(dt) : weekKey(dt));
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(t);
+    }
+    return Array.from(map.entries()).map(([key, items]) => ({ key, items }));
+  }
+
+  function clearApp() { appEl.innerHTML = ''; }
+
+  function render() {
+    summarize();
+    const arr = filteredSortedTrades();
+    const groups = groupTrades(arr);
+    clearApp();
+    for (const g of groups) {
+      const gh = document.createElement('div');
+      gh.className = 'group-header';
+      const title = document.createElement('div');
+      title.className = 'group-title';
+      title.textContent = g.key;
+      const toggle = document.createElement('button');
+      toggle.textContent = 'Toggle';
+      let collapsed = false;
+      gh.appendChild(title); gh.appendChild(toggle);
+      const cardsWrap = document.createElement('div');
+      cardsWrap.className = 'cards';
+      toggle.addEventListener('click', () => {
+        collapsed = !collapsed; cardsWrap.style.display = collapsed ? 'none' : 'grid';
+      });
+      appEl.appendChild(gh);
+      appEl.appendChild(cardsWrap);
+      for (const t of g.items) cardsWrap.appendChild(renderCard(t));
+    }
+    if (trades.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'note';
+      empty.textContent = 'No trades yet. Click “Add trade” to log your market wizardry.';
+      appEl.appendChild(empty);
+    }
+  }
+
+  function renderCard(t) {
+    const d = computeDerived(t);
+    const card = document.createElement('div');
+    card.className = 'card';
+    const header = document.createElement('div'); header.className = 'card-header';
+    const left = document.createElement('div');
+    const right = document.createElement('div');
+    const title = document.createElement('div');
+    const sym = (t.ticker || t.underlying || '').toUpperCase();
+    if (t.type === 'option') {
+      title.innerHTML = `<b>${sym}</b> ${t.optionType || ''} ${t.strike ?? ''} ${t.expiration ? '('+t.expiration+')' : ''}`;
+    } else {
+      title.innerHTML = `<b>${sym}</b>`;
+    }
+    const sub = document.createElement('div');
+    sub.className = 'muted';
+    const bt = t.buyTime ? new Date(t.buyTime) : null;
+    const st = t.sellTime ? new Date(t.sellTime) : null;
+    sub.textContent = `Buy: ${bt ? bt.toLocaleString() : '—'}  ·  Sell: ${st ? st.toLocaleString() : '—'}  ·  Hold: ${d.hold}`;
+    left.appendChild(title); left.appendChild(sub);
+    const chips = document.createElement('div'); chips.style.display='flex'; chips.style.gap='6px';
+    const chip1 = document.createElement('span'); chip1.className='chip'; chip1.textContent = t.type;
+    const chip2 = document.createElement('span'); chip2.className='chip'; chip2.textContent = t.rating || '—';
+    chips.appendChild(chip1); chips.appendChild(chip2);
+    right.appendChild(chips);
+    header.appendChild(left); header.appendChild(right);
+    card.appendChild(header);
+
+    const row1 = document.createElement('div'); row1.className = 'row-3';
+    const netReturnCls = d.netReturn == null ? 'muted' : (d.netReturn >= 0 ? 'good' : 'bad');
+    row1.appendChild(kv('Net Cost', currency(d.netCost)));
+    row1.appendChild(kv('Net Return', spanClass(currency(d.netReturn), netReturnCls)));
+    row1.appendChild(kv('Fractional', spanClass(fmtPct(d.fractional), d.fractional == null ? 'muted' : (d.fractional >= 0 ? 'good' : 'bad'))));
+    card.appendChild(row1);
+
+    const row2 = document.createElement('div'); row2.className = 'row';
+    row2.appendChild(kv('Buy', currency(Number(t.buyPrice) || 0)));
+    row2.appendChild(kv('Sell', currency(t.sellPrice === undefined || t.sellPrice === null || t.sellPrice === '' ? null : Number(t.sellPrice))));
+    card.appendChild(row2);
+
+    const row3 = document.createElement('div'); row3.className='row';
+    row3.appendChild(kv('Fees', currency(Number(t.fees || 0))));
+    if (t.type === 'option') {
+      row3.appendChild(kv('Contract', `${t.optionType || ''} ${t.strike ?? ''} exp ${t.expiration || '—'}`));
+    } else {
+      row3.appendChild(kv('—', ''));
+    }
+    card.appendChild(row3);
+
+    if (t.notes) {
+      const n = document.createElement('div'); n.className='note'; n.textContent = t.notes; card.appendChild(n);
+    }
+
+    const actions = document.createElement('div'); actions.className = 'actions';
+    const edit = document.createElement('button'); edit.textContent = 'Edit'; edit.addEventListener('click', () => openModal(t.id));
+    actions.appendChild(edit);
+    card.appendChild(actions);
+    return card;
+  }
+
+  function spanClass(text, cls) { const s = document.createElement('span'); s.textContent = text; s.className = cls; return s; }
+  function kv(k, vNodeOrText) {
+    const c = document.createElement('div'); c.className = 'kv';
+    const b = document.createElement('div'); b.innerHTML = `<b>${k}</b>`; c.appendChild(b);
+    const v = document.createElement('div');
+    if (vNodeOrText instanceof Node) v.appendChild(vNodeOrText); else v.textContent = vNodeOrText;
+    c.appendChild(v);
+    return c;
+  }
+
+  function resetForm() {
+    editingId = null;
+    modalTitle.textContent = 'Add Trade';
+    deleteTradeBtn.classList.add('hidden');
+    typeEl.value = 'stock'; ratingEl.value = '';
+    tickerEl.value = ''; underlyingEl.value = ''; optionTypeEl.value = 'Call'; strikeEl.value = '';
+    expirationEl.value = '';
+    buyPriceEl.value = ''; sellPriceEl.value = '';
+    feesEl.value = '0'; fees2El.value = '0';
+    buyTimeEl.value = localDateTimeValue(new Date()); sellTimeEl.value = '';
+    notesEl.value = '';
+    updateTypeUI();
+  }
+
+  function localDateTimeValue(d) {
+    const off = d.getTimezoneOffset();
+    const local = new Date(d.getTime() - off*60000);
+    return local.toISOString().slice(0,16);
+  }
+
+  function updateTypeUI() {
+    const isOpt = typeEl.value === 'option';
+    stockRow.classList.toggle('hidden', isOpt);
+    optionRow1.classList.toggle('hidden', !isOpt);
+    optionRow2.classList.toggle('hidden', !isOpt);
+  }
+
+  function openModal(id=null) {
+    if (id) {
+      const t = trades.find(x => x.id === id);
+      if (!t) return;
+      editingId = id;
+      modalTitle.textContent = 'Edit Trade';
+      deleteTradeBtn.classList.remove('hidden');
+      typeEl.value = t.type || 'stock'; ratingEl.value = t.rating || '';
+      tickerEl.value = t.ticker || '';
+      underlyingEl.value = t.underlying || '';
+      optionTypeEl.value = t.optionType || 'Call';
+      strikeEl.value = t.strike ?? '';
+      expirationEl.value = t.expiration || '';
+      buyPriceEl.value = t.buyPrice ?? '';
+      sellPriceEl.value = t.sellPrice ?? '';
+      const f = Number(t.fees || 0);
+      feesEl.value = f.toString(); fees2El.value = f.toString();
+      buyTimeEl.value = t.buyTime ? localDateTimeValue(new Date(t.buyTime)) : '';
+      sellTimeEl.value = t.sellTime ? localDateTimeValue(new Date(t.sellTime)) : '';
+      notesEl.value = t.notes || '';
+      updateTypeUI();
+    } else {
+      resetForm();
+    }
+    modal.showModal();
+  }
+
+  function collectForm() {
+    const isOpt = typeEl.value === 'option';
+    const fees = Number((fees2El.value || feesEl.value || 0));
+    const base = {
+      id: editingId || uid(),
+      type: typeEl.value,
+      rating: ratingEl.value || '',
+      buyPrice: numOrNull(buyPriceEl.value),
+      sellPrice: numOrNull(sellPriceEl.value),
+      fees,
+      buyTime: dtOrNull(buyTimeEl.value),
+      sellTime: dtOrNull(sellTimeEl.value),
+      notes: (notesEl.value || '').trim(),
+    };
+    if (isOpt) {
+      base.underlying = (underlyingEl.value || '').trim().toUpperCase();
+      base.optionType = optionTypeEl.value;
+      base.strike = numOrNull(strikeEl.value);
+      base.expiration = (expirationEl.value || '').trim();
+    } else {
+      base.ticker = (tickerEl.value || '').trim().toUpperCase();
+    }
+    return base;
+  }
+
+  function numOrNull(v) { return v === '' || v === null || v === undefined ? null : Number(v); }
+  function dtOrNull(v) { return v ? new Date(v).toISOString() : null; }
+
+  function onSubmit(e) {
+    e?.preventDefault?.();
+    const data = collectForm();
+    // very light validation
+    if (!data.buyTime) { alert('Please enter a Buy Time/Date.'); return; }
+    if (data.type === 'stock' && !data.ticker) { alert('Please enter a stock Ticker.'); return; }
+    if (data.type === 'option' && !data.underlying) { alert('Please enter an Underlying Ticker.'); return; }
+    const idx = trades.findIndex(t => t.id === data.id);
+    if (idx >= 0) trades[idx] = data; else trades.unshift(data);
+    save();
+    modal.close();
+    render();
+  }
+
+  function onDelete() {
+    if (!editingId) return; if (!confirm('Delete this trade?')) return;
+    trades = trades.filter(t => t.id !== editingId);
+    save(); modal.close(); render();
+  }
+
+  // Import / Export
+  function exportJSON() {
+    const payload = { schema: 'trade-log.v1', exportedAt: new Date().toISOString(), trades };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `trades-${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function importJSON(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        const incoming = Array.isArray(data) ? data : (Array.isArray(data.trades) ? data.trades : []);
+        if (!incoming.length) { alert('No trades found in file.'); return; }
+        // Merge by id; create ids if missing
+        const map = new Map(trades.map(t => [t.id, t]));
+        for (const raw of incoming) {
+          const t = migrateTrade(raw);
+          if (!t.id) t.id = uid();
+          map.set(t.id, t);
+        }
+        trades = Array.from(map.values()).sort((a,b) => (b.buyTime ? new Date(b.buyTime).getTime() : 0) - (a.buyTime ? new Date(a.buyTime).getTime() : 0));
+        save(); render();
+        alert(`Imported ${incoming.length} trades. Your data was merged.`);
+      } catch (e) {
+        alert('Import failed: ' + e.message);
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  async function bootstrapFromDataJson() {
+    try {
+      const res = await fetch('data.json', { cache: 'no-store' });
+      if (!res.ok) return;
+      const data = await res.json();
+      const incoming = Array.isArray(data) ? data : (Array.isArray(data.trades) ? data.trades : []);
+      if (!incoming.length) return;
+      const map = new Map(trades.map(t => [t.id, t]));
+      for (const raw of incoming) {
+        const t = migrateTrade(raw);
+        if (!t.id) t.id = uid();
+        map.set(t.id, t);
+      }
+      trades = Array.from(map.values()).sort((a,b) => (b.buyTime ? new Date(b.buyTime).getTime() : 0) - (a.buyTime ? new Date(a.buyTime).getTime() : 0));
+      save();
+    } catch (e) {
+      // likely opened via file:// and fetch was blocked, or file missing — ignore
+    }
+  }
+
+  function migrateTrade(t) {
+    // Handle older or slightly different schemas by mapping known fields
+    const out = { ...t };
+    if (!out.type) out.type = out.optionType || out.strike || out.expiration ? 'option' : 'stock';
+    if (out.type === 'stock') {
+      out.ticker = (out.ticker || out.underlying || '').toUpperCase();
+    } else {
+      out.underlying = (out.underlying || out.ticker || '').toUpperCase();
+    }
+    if (out.buyPrice !== null && out.buyPrice !== undefined) out.buyPrice = Number(out.buyPrice);
+    if (out.sellPrice !== null && out.sellPrice !== undefined) out.sellPrice = Number(out.sellPrice);
+    out.fees = Number(out.fees || 0);
+    return out;
+  }
+
+  // Wire up events
+  addBtn.addEventListener('click', () => openModal());
+  closeModalBtn.addEventListener('click', () => modal.close());
+  document.getElementById('tradeForm').addEventListener('submit', onSubmit);
+  deleteTradeBtn.addEventListener('click', onDelete);
+  typeEl.addEventListener('change', updateTypeUI);
+  searchEl.addEventListener('input', render);
+  sortByEl.addEventListener('change', render);
+  groupByEl.addEventListener('change', render);
+  exportBtn.addEventListener('click', exportJSON);
+  importBtn.addEventListener('click', () => importFile.click());
+  importFile.addEventListener('change', (e) => { const f = e.target.files?.[0]; if (f) importJSON(f); importFile.value=''; });
+  clearBtn.addEventListener('click', () => { if (confirm('This clears all stored trades on this device. Proceed?')) { trades = []; save(); render(); }});
+
+  // Initialize
+  load();
+  if (trades.length === 0) {
+    bootstrapFromDataJson().finally(render);
+  } else {
+    render();
+  }
+  </script>
+</body>
+</html>

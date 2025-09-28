@@ -1,0 +1,102 @@
+{
+  "schema": "trade-log.v1",
+  "exportedAt": "2025-01-01T12:00:00.000Z",
+  "trades": [
+    {
+      "id": "ex1-abc",
+      "type": "stock",
+      "ticker": "AAPL",
+      "rating": "**",
+      "buyPrice": 188.42,
+      "sellPrice": 191.10,
+      "fees": 1.25,
+      "buyTime": "2025-09-15T14:03:00.000Z",
+      "sellTime": "2025-09-15T15:44:00.000Z",
+      "notes": "Bought after Tim Cook winked at a chart. Held until the vibe said 'ok, that's enough'."
+    },
+    {
+      "id": "ex2-def",
+      "type": "stock",
+      "ticker": "TSLA",
+      "rating": "o",
+      "buyPrice": 246.00,
+      "sellPrice": 241.40,
+      "fees": 1.25,
+      "buyTime": "2025-09-16T13:31:00.000Z",
+      "sellTime": "2025-09-16T14:07:00.000Z",
+      "notes": "Chased a green candle. The candle chased me back. Lesson learned (again)."
+    },
+    {
+      "id": "ex3-ghi",
+      "type": "option",
+      "underlying": "NVDA",
+      "optionType": "Call",
+      "strike": 120.0,
+      "expiration": "2025-10-17",
+      "rating": "***",
+      "buyPrice": 5.20,
+      "sellPrice": 7.75,
+      "fees": 1.60,
+      "buyTime": "2025-09-17T14:10:00.000Z",
+      "sellTime": "2025-09-17T19:42:00.000Z",
+      "notes": "Played the lunchtime breakout. Market briefly acknowledged my existence."
+    },
+    {
+      "id": "ex4-jkl",
+      "type": "option",
+      "underlying": "SPY",
+      "optionType": "Put",
+      "strike": 560.0,
+      "expiration": "2025-09-20",
+      "rating": "oo",
+      "buyPrice": 2.15,
+      "sellPrice": 1.40,
+      "fees": 1.30,
+      "buyTime": "2025-09-18T15:58:00.000Z",
+      "sellTime": "2025-09-18T20:10:00.000Z",
+      "notes": "Tried to catch a falling knife. Caught the handle. Still heavy."
+    },
+    {
+      "id": "ex5-mno",
+      "type": "stock",
+      "ticker": "MSFT",
+      "rating": "ooo",
+      "buyPrice": 420.69,
+      "sellPrice": null,
+      "fees": 1.00,
+      "buyTime": "2025-09-19T13:47:00.000Z",
+      "sellTime": null,
+      "notes": "Starter position. Waiting for a dignified exit, like a cat backing off a couch."
+    },
+    {
+      "id": "ex6-pqr",
+      "type": "option",
+      "underlying": "AMD",
+      "optionType": "Call",
+      "strike": 180.0,
+      "expiration": "2025-11-21",
+      "rating": "*",
+      "buyPrice": 3.40,
+      "sellPrice": null,
+      "fees": 1.10,
+      "buyTime": "2025-09-19T14:26:00.000Z",
+      "sellTime": null,
+      "notes": "Speculative lotto. Brought confetti in case it works."
+    },
+    {
+      "id": "ex7-stu",
+      "type": "option",
+      "underlying": "AAPL",
+      "optionType": "Put",
+      "strike": 185.0,
+      "expiration": "2025-09-27",
+      "rating": "**",
+      "buyPrice": 1.85,
+      "sellPrice": 2.25,
+      "fees": 1.20,
+      "buyTime": "2025-09-22T14:03:00.000Z",
+      "sellTime": "2025-09-22T18:31:00.000Z",
+      "notes": "Hedge turned snack-sized win. The rarest Pokémon."
+    }
+  ]
+}
