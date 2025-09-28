@@ -18,4 +18,4 @@ The app is built as a static site, so you can host it on any simple web server o
 
 ## License
 
-This project is released under the [MIT License](LICENSE). Feel free to adapt it for personal or commercial use.
+This project is released under the [MIT License](LICENSE). 
