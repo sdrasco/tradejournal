@@ -99,8 +99,17 @@
     .card { border: 2px solid var(--ink); border-radius: var(--radius); background: var(--panel); padding: 16px; display: grid; gap: 10px; }
     .card-header { display: flex; align-items: baseline; justify-content: space-between; }
     .chip { background: var(--accent-2); border: 2px solid var(--ink-dark); padding: 3px 10px; border-radius: 999px; font-size: 12px; color: #2f4f4b; }
-    .rating-badge { display: inline-flex; align-items: center; justify-content: center; padding: 4px 6px; border-radius: var(--radius-sm); border: 2px solid var(--ink); background: var(--panel-2); }
-    .rating-badge img { width: 48px; height: 24px; object-fit: contain; display: block; }
+    .rating-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      border: 2px solid var(--ink);
+      background: var(--panel-2);
+      font-size: 26px;
+      line-height: 1;
+    }
     .bad { color: var(--danger); font-weight: 600; }
     .good { color: var(--success); font-weight: 600; }
     .warn { color: var(--warn); font-weight: 600; }
@@ -283,11 +292,11 @@
   let editingId = null;
 
   const RATING_INFO = {
-    two_poop: { label: 'Two poops', image: 'images/two_poop.png', score: 1 },
-    one_poop: { label: 'One poop', image: 'images/one_poop.png', score: 2 },
-    meh: { label: 'Meh', image: 'images/meh.png', score: 3 },
-    one_star: { label: 'One star', image: 'images/one_star.png', score: 4 },
-    two_star: { label: 'Two stars', image: 'images/two_star.png', score: 5 },
+    two_poop: { label: 'Two poops', emoji: '💩💩', score: 1 },
+    one_poop: { label: 'One poop', emoji: '💩', score: 2 },
+    meh: { label: 'Meh', emoji: '😐', score: 3 },
+    one_star: { label: 'One star', emoji: '⭐', score: 4 },
+    two_star: { label: 'Two stars', emoji: '⭐⭐', score: 5 },
   };
 
   const LEGACY_RATING_MAP = {
@@ -579,11 +588,9 @@
     const wrap = document.createElement('span');
     wrap.className = 'rating-badge';
     wrap.title = info.label;
+    wrap.setAttribute('aria-label', info.label);
     wrap.dataset.rating = normalized;
-    const img = document.createElement('img');
-    img.src = info.image;
-    img.alt = info.label;
-    wrap.appendChild(img);
+    wrap.textContent = info.emoji;
     return wrap;
   }
 
