@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Trading cards: collect, reflect, correct.</title>
+  <title>tradejournal.uk: where your shit matters</title>
   <meta name="description" content="Local-first trading log for stocks and options. Import/export JSON. No data leaves your device." />
   <style>
     :root {
@@ -170,7 +170,7 @@
         <img src="logo_small.png" srcset="logo_small.png 1x, logo.png 2x" alt="Trade Log logo" />
       </div>
       <div>
-        <div style="font-weight: 700; font-size: 18px;">Trading cards: collect, reflect, correct.</div>
+        <div id="tagline" style="font-weight: 700; font-size: 18px;">tradejournal.uk: where your shit matters</div>
       </div>
       <div class="metrics">
         <div class="metric" id="metric-equity">Equity: $0.00</div>
@@ -318,6 +318,55 @@
   </dialog>
 
   <script>
+  const TAGLINES = [
+    "tradejournal.uk: where your shit matters",
+    "tradejournal.uk: where your trades (and your shit) matter",
+    "tradejournal.uk: because even crappy trades deserve a record",
+    "tradejournal.uk: your stars, your poops, your story",
+    "tradejournal.uk: the journal that cares about your crap trades too",
+    "tradejournal.uk: polishing turds since 2025",
+    "tradejournal.uk: track the wins, flush the rest",
+    "tradejournal.uk: even bad trades make good stories",
+    "tradejournal.uk: turning oops into insights",
+    "tradejournal.uk: stars for the highs, poops for the lows",
+    "tradejournal.uk: because screenshots aren't a strategy",
+    "tradejournal.uk: every turd has a tale",
+    "tradejournal.uk: celebrate the stars, survive the stinkers",
+    "tradejournal.uk: because forgetting is the real loss",
+    "tradejournal.uk: the only journal that stinks less over time",
+    "tradejournal.uk: where even your crap trades shine",
+    "tradejournal.uk: profit, poop, repeat",
+    "tradejournal.uk: where lessons hide in losses",
+    "tradejournal.uk: the only journal that loves your bad trades too",
+    "tradejournal.uk: documenting brilliance and bowel movements alike",
+    "tradejournal.uk: because even stinkers deserve a star",
+    "tradejournal.uk: log the glory, log the garbage",
+    "tradejournal.uk: when in doubt, write it out",
+    "tradejournal.uk: mistakes included at no extra charge",
+    "tradejournal.uk: the truth behind every trade (good or crappy)",
+    "tradejournal.uk: where hindsight gets a sense of humor",
+    "tradejournal.uk: keeping score of stars and stinkers",
+    "tradejournal.uk: because memory is a terrible trading tool",
+    "tradejournal.uk: no trade too crappy to count",
+    "tradejournal.uk: where brilliance and blunders meet",
+    "tradejournal.uk: log it or lose it",
+    "tradejournal.uk: because hindsight deserves a home",
+    "tradejournal.uk: every chart needs a backstory",
+    "tradejournal.uk: journaling the good, the bad, and the ugly trades",
+    "tradejournal.uk: laugh at your losses, learn from them too",
+    "tradejournal.uk: where even garbage trades get recycled",
+  ];
+
+  function applyRandomTagline() {
+    const taglineEl = document.getElementById('tagline');
+    if (!taglineEl || TAGLINES.length === 0) return;
+    const tagline = TAGLINES[Math.floor(Math.random() * TAGLINES.length)];
+    taglineEl.textContent = tagline;
+    document.title = tagline;
+  }
+
+  applyRandomTagline();
+
   // Local-first Trade Log — all data stays in localStorage
   const STORAGE_KEY = 'tradeLog:trades:v1';
   /** @type {Array<any>} */
