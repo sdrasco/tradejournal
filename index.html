@@ -119,36 +119,11 @@
     .kv { background: var(--panel-2); border: 2px solid var(--ink); border-radius: var(--radius-sm); padding: 8px; font-size: 12px; }
     .kv b { color: var(--text); font-weight: 700; }
     .note { font-size: 12px; color: var(--muted); background: var(--panel-2); border: 2px solid var(--ink); padding: 8px; border-radius: var(--radius-sm); }
-    .footer {
-      margin: 24px 0 40px;
-      color: var(--muted);
+    .small-print {
       font-size: 12px;
-      display: flex;
-      justify-content: center;
-    }
-    .footer-panel {
-      background: var(--panel-2);
-      border: 2px solid var(--ink);
-      border-radius: var(--radius);
-      box-shadow: 0 6px 16px -10px var(--shadow);
-      width: 100%;
-    }
-    .footer-panel .footer-spacer { visibility: hidden; }
-    .footer-panel.bar {
-      padding: 12px 0;
-    }
-    .footer-panel .footer-message {
-      font-size: 14px;
-      color: var(--text);
-    }
-    @media (max-width: 720px) {
-      .footer-panel.bar {
-        grid-template-columns: 1fr;
-        justify-items: stretch;
-        row-gap: 12px;
-      }
-      .footer-panel .footer-spacer { display: none; }
-      .footer-panel .controls { justify-self: end; }
+      color: var(--muted);
+      margin-top: 4px;
+      max-width: 420px;
     }
 
     dialog[open] { border: 2px solid var(--ink); border-radius: 20px; background: var(--panel); color: var(--text); width: min(740px, 96vw); }
@@ -171,6 +146,7 @@
       </div>
       <div>
         <div id="tagline" style="font-weight: 700; font-size: 18px;">tradejournal.uk: where your shit matters</div>
+        <div class="small-print">We don't collect or store any data. Everything happens on your device. Made by <a href="https://buymeacoffee.com/stevedrasco" target="_blank" rel="noopener">Steve Drasco</a>.</div>
       </div>
       <div class="metrics">
         <div class="metric" id="metric-equity">Equity: $0.00</div>
@@ -201,21 +177,12 @@
         <input id="importFile" type="file" accept="application/json" class="hidden" />
         <button id="importBtn">Import</button>
         <button id="exportBtn">Export</button>
+        <button class="danger" id="clearBtn">Clear stored data</button>
       </div>
     </div>
   </header>
 
   <main class="container" id="app" style="margin-top: 16px;"></main>
-
-  <div class="container footer">
-    <div class="footer-panel bar">
-      <div class="footer-spacer" aria-hidden="true"></div>
-      <div class="footer-message">We don't collect or store any data. Everything happens on your device.</div>
-      <div class="controls">
-        <button class="danger" id="clearBtn">Clear stored data</button>
-      </div>
-    </div>
-  </div>
 
   <dialog id="tradeModal">
     <form method="dialog" id="tradeForm">
