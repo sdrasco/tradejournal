@@ -536,14 +536,10 @@
     const netReturnCls = d.netReturn == null ? 'muted' : (d.netReturn >= 0 ? 'good' : 'bad');
     const fractionalCls = d.fractional == null ? 'muted' : (d.fractional >= 0 ? 'good' : 'bad');
     const returnWrap = document.createElement('div');
-    const netLine = document.createElement('div');
-    netLine.append('Net: ');
-    netLine.appendChild(spanClass(currency(d.netReturn), netReturnCls));
-    const fracLine = document.createElement('div');
-    fracLine.append('Fractional: ');
-    fracLine.appendChild(spanClass(fmtPct(d.fractional), fractionalCls));
-    returnWrap.appendChild(netLine);
-    returnWrap.appendChild(fracLine);
+    returnWrap.style.display = 'flex';
+    returnWrap.style.gap = '10px';
+    returnWrap.appendChild(spanClass(currency(d.netReturn), netReturnCls));
+    returnWrap.appendChild(spanClass(fmtPct(d.fractional), fractionalCls));
     row1.appendChild(kv('Net Cost', currency(d.netCost)));
     row1.appendChild(kv('Return', returnWrap));
     card.appendChild(row1);
