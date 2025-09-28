@@ -127,20 +127,28 @@
       justify-content: center;
     }
     .footer-panel {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 12px;
-      align-items: center;
-      padding: 14px 18px;
       background: var(--panel-2);
       border: 2px solid var(--ink);
       border-radius: var(--radius);
       box-shadow: 0 6px 16px -10px var(--shadow);
       width: 100%;
     }
-    @media (max-width: 540px) {
-      .footer-panel { grid-template-columns: 1fr; justify-items: stretch; }
-      .footer-panel button { justify-self: start; }
+    .footer-panel .footer-spacer { visibility: hidden; }
+    .footer-panel.bar {
+      padding: 12px 0;
+    }
+    .footer-panel .footer-message {
+      font-size: 14px;
+      color: var(--text);
+    }
+    @media (max-width: 720px) {
+      .footer-panel.bar {
+        grid-template-columns: 1fr;
+        justify-items: stretch;
+        row-gap: 12px;
+      }
+      .footer-panel .footer-spacer { display: none; }
+      .footer-panel .controls { justify-self: end; }
     }
 
     dialog[open] { border: 2px solid var(--ink); border-radius: 20px; background: var(--panel); color: var(--text); width: min(740px, 96vw); }
@@ -200,9 +208,12 @@
   <main class="container" id="app" style="margin-top: 16px;"></main>
 
   <div class="container footer">
-    <div class="footer-panel">
-      <div>We don't collect or store any data. Everything happens on your device.</div>
-      <button class="danger" id="clearBtn">Clear stored data</button>
+    <div class="footer-panel bar">
+      <div class="footer-spacer" aria-hidden="true"></div>
+      <div class="footer-message">We don't collect or store any data. Everything happens on your device.</div>
+      <div class="controls">
+        <button class="danger" id="clearBtn">Clear stored data</button>
+      </div>
     </div>
   </div>
 
