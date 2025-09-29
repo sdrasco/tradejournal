@@ -116,11 +116,16 @@
     .calendar-day--empty { background: rgba(247, 239, 227, 0.6); }
     .calendar-day--empty .calendar-day-count { background: transparent; border-style: dashed; color: var(--muted); }
     .calendar-day--today { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(255, 154, 122, 0.35); }
-    .calendar-day-head { display: flex; align-items: center; justify-content: space-between; width: 100%; background: transparent; border: none; padding: 0; color: inherit; font: inherit; cursor: pointer; }
+    .calendar-day-head { display: flex; align-items: flex-start; justify-content: space-between; width: 100%; background: transparent; border: none; padding: 0; color: inherit; font: inherit; cursor: pointer; }
     .calendar-day-head:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .calendar-day-head:disabled { cursor: default; opacity: 0.6; }
     .calendar-day-number { font-weight: 700; font-size: 16px; }
     .calendar-day-count { font-size: 12px; background: var(--chip); border: 1px solid var(--ink); border-radius: 999px; padding: 2px 6px; display: inline-flex; align-items: center; gap: 4px; }
+    .calendar-day-metrics { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+    .calendar-day-summary-row { display: flex; align-items: center; gap: 6px; }
+    .calendar-day-returns { font-size: 12px; background: var(--panel); border: 1px solid var(--ink); border-radius: 999px; padding: 2px 6px; display: inline-flex; align-items: center; gap: 6px; }
+    .calendar-day-returns span { white-space: nowrap; font-weight: 600; }
+    .calendar-day-returns .muted { font-weight: 500; }
     .calendar-day-caret { margin-left: 6px; font-size: 12px; transition: transform 0.2s ease; }
     .calendar-day--open .calendar-day-caret { transform: rotate(180deg); }
     .calendar-day-cards { display: grid; gap: 8px; }
@@ -478,6 +483,27 @@
     return { netCost, netReturn, fractional, hold };
   }
 
+  function summarizeDayTrades(tradesForDay) {
+    if (!Array.isArray(tradesForDay) || tradesForDay.length === 0) {
+      return { netReturn: null, fractional: null };
+    }
+    let totalReturn = 0;
+    let totalCost = 0;
+    let hasClosedTrade = false;
+    for (const trade of tradesForDay) {
+      const derived = trade?._d ?? computeDerived(trade);
+      if (derived?.netReturn === null || !isFinite(derived.netReturn)) continue;
+      totalReturn += derived.netReturn;
+      totalCost += derived.netCost;
+      hasClosedTrade = true;
+    }
+    const fractional = hasClosedTrade && totalCost !== 0 ? totalReturn / totalCost : null;
+    return {
+      netReturn: hasClosedTrade ? totalReturn : null,
+      fractional,
+    };
+  }
+
   function normalizeRating(value) {
     if (!value) return '';
     if (RATING_INFO[value]) return value;
@@ -593,10 +619,12 @@
           for (let i = 0; i < 7; i++) {
             const dayDate = new Date(cursor);
             const key = isoDate(dayDate);
+            const tradesForDay = byDay.has(key) ? [...byDay.get(key)] : [];
             week.push({
               date: new Date(dayDate),
               key,
-              trades: byDay.has(key) ? [...byDay.get(key)] : [],
+              trades: tradesForDay,
+              summary: summarizeDayTrades(tradesForDay),
               isCurrentMonth: dayDate.getMonth() === monthIndex,
               isToday: key === todayIso,
             });
@@ -703,14 +731,26 @@
     number.textContent = day.date.getDate();
     head.appendChild(number);
     if (day.trades.length > 0) {
+      const metrics = document.createElement('div');
+      metrics.className = 'calendar-day-metrics';
+      const summaryRow = document.createElement('div');
+      summaryRow.className = 'calendar-day-summary-row';
       const count = document.createElement('span');
       count.className = 'calendar-day-count';
       count.textContent = `${day.trades.length} ${day.trades.length === 1 ? 'trade' : 'trades'}`;
-      head.appendChild(count);
+      summaryRow.appendChild(count);
       const caret = document.createElement('span');
       caret.className = 'calendar-day-caret';
       caret.textContent = '▾';
-      head.appendChild(caret);
+      summaryRow.appendChild(caret);
+      metrics.appendChild(summaryRow);
+      const netReturn = day.summary?.netReturn ?? null;
+      const netReturnCls = netReturn == null ? 'muted' : (netReturn >= 0 ? 'good' : 'bad');
+      const returns = document.createElement('span');
+      returns.className = 'calendar-day-returns';
+      returns.appendChild(spanClass(currency(netReturn), netReturnCls));
+      metrics.appendChild(returns);
+      head.appendChild(metrics);
     } else {
       const placeholder = document.createElement('span');
       placeholder.className = 'calendar-day-count';
