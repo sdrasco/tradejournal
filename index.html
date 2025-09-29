@@ -102,6 +102,35 @@
 
     .cards { display: grid; grid-template-columns: 1fr; gap: 8px; }
     @media (min-width: 720px) { .cards { grid-template-columns: 1fr 1fr; } }
+    .calendar { display: grid; gap: 24px; }
+    .calendar-month { border: 2px solid var(--ink); border-radius: var(--radius); background: var(--panel); padding: 16px; box-shadow: 0 10px 24px rgba(212, 163, 115, 0.18); }
+    .calendar-month-title { font-weight: 700; font-size: 18px; margin-bottom: 12px; }
+    .calendar-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+    .calendar-week + .calendar-week { margin-top: 8px; }
+    .calendar-week--labels { text-transform: uppercase; font-size: 11px; color: var(--muted); letter-spacing: 0.08em; font-weight: 700; }
+    .calendar-week--labels .calendar-weekday { padding: 4px 0; }
+    .calendar-weekday { text-align: center; }
+    .calendar-day { border: 2px solid var(--card-border); border-radius: var(--radius-sm); background: var(--panel-2); padding: 8px; min-height: 110px; display: flex; flex-direction: column; gap: 8px; transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease; position: relative; }
+    .calendar-day--open { background: var(--panel); border-color: var(--ink); box-shadow: 0 10px 20px var(--shadow); }
+    .calendar-day--muted { opacity: 0.55; }
+    .calendar-day--empty { background: rgba(247, 239, 227, 0.6); }
+    .calendar-day--empty .calendar-day-count { background: transparent; border-style: dashed; color: var(--muted); }
+    .calendar-day--today { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(255, 154, 122, 0.35); }
+    .calendar-day-head { display: flex; align-items: center; justify-content: space-between; width: 100%; background: transparent; border: none; padding: 0; color: inherit; font: inherit; cursor: pointer; }
+    .calendar-day-head:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .calendar-day-head:disabled { cursor: default; opacity: 0.6; }
+    .calendar-day-number { font-weight: 700; font-size: 16px; }
+    .calendar-day-count { font-size: 12px; background: var(--chip); border: 1px solid var(--ink); border-radius: 999px; padding: 2px 6px; display: inline-flex; align-items: center; gap: 4px; }
+    .calendar-day-caret { margin-left: 6px; font-size: 12px; transition: transform 0.2s ease; }
+    .calendar-day--open .calendar-day-caret { transform: rotate(180deg); }
+    .calendar-day-cards { display: grid; gap: 8px; }
+    .calendar-day-cards.cards { margin-top: 0; }
+    .calendar-note { margin-top: 12px; }
+    @media (max-width: 640px) {
+      .calendar-week { gap: 6px; }
+      .calendar-day { min-height: 96px; padding: 6px; }
+      .calendar-day-count { font-size: 11px; }
+    }
     .card { border: 2px solid var(--ink); border-radius: var(--radius); background: var(--panel); padding: 12px; display: grid; gap: 8px; font-size: 14px; }
     .card-header { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
     .card-header .muted { font-size: 12px; }
@@ -516,6 +545,72 @@
     return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2,'0')}`;
   }
 
+  const WEEKDAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  function startOfWeek(date) {
+    const d = new Date(date);
+    d.setHours(12, 0, 0, 0);
+    const day = d.getDay();
+    d.setDate(d.getDate() - day);
+    return d;
+  }
+
+  function endOfWeek(date) {
+    const d = startOfWeek(date);
+    d.setDate(d.getDate() + 6);
+    return d;
+  }
+
+  function buildCalendarView(arr) {
+    const byDay = new Map();
+    const undated = [];
+    const monthKeys = new Set();
+    for (const t of arr) {
+      if (!t.buyTime) { undated.push(t); continue; }
+      const dt = new Date(t.buyTime);
+      if (!(dt instanceof Date) || isNaN(dt)) { undated.push(t); continue; }
+      const dayKey = isoDate(dt);
+      if (!byDay.has(dayKey)) byDay.set(dayKey, []);
+      byDay.get(dayKey).push(t);
+      monthKeys.add(dayKey.slice(0, 7));
+    }
+    const todayIso = isoDate(new Date());
+    const months = Array.from(monthKeys)
+      .sort((a, b) => new Date(`${b}-01`).getTime() - new Date(`${a}-01`).getTime())
+      .map((monthKey) => {
+        const [yearStr, monthStr] = monthKey.split('-');
+        const year = Number(yearStr);
+        const monthIndex = Number(monthStr) - 1;
+        const firstDay = new Date(year, monthIndex, 1);
+        firstDay.setHours(12, 0, 0, 0);
+        const lastDay = new Date(year, monthIndex + 1, 0);
+        lastDay.setHours(12, 0, 0, 0);
+        const start = startOfWeek(firstDay);
+        const end = endOfWeek(lastDay);
+        const weeks = [];
+        const cursor = new Date(start);
+        while (cursor <= end) {
+          const week = [];
+          for (let i = 0; i < 7; i++) {
+            const dayDate = new Date(cursor);
+            const key = isoDate(dayDate);
+            week.push({
+              date: new Date(dayDate),
+              key,
+              trades: byDay.has(key) ? [...byDay.get(key)] : [],
+              isCurrentMonth: dayDate.getMonth() === monthIndex,
+              isToday: key === todayIso,
+            });
+            cursor.setDate(cursor.getDate() + 1);
+          }
+          weeks.push(week);
+        }
+        const label = firstDay.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+        return { key: monthKey, label, weeks };
+      });
+    return { months, undated };
+  }
+
   function groupTrades(arr) {
     const mode = groupByEl.value;
     if (mode === 'none') return [{ key: 'All trades', items: arr }];
@@ -531,11 +626,7 @@
 
   function clearApp() { appEl.innerHTML = ''; }
 
-  function render() {
-    summarize();
-    const arr = filteredSortedTrades();
-    const groups = groupTrades(arr);
-    clearApp();
+  function renderGroupedList(groups) {
     for (const g of groups) {
       const gh = document.createElement('div');
       gh.className = 'group-header';
@@ -545,17 +636,133 @@
       const toggle = document.createElement('button');
       toggle.textContent = 'Toggle';
       let collapsed = false;
-      gh.appendChild(title); gh.appendChild(toggle);
+      gh.appendChild(title);
+      gh.appendChild(toggle);
       const cardsWrap = document.createElement('div');
       cardsWrap.className = 'cards';
       toggle.addEventListener('click', () => {
-        collapsed = !collapsed; cardsWrap.style.display = collapsed ? 'none' : 'grid';
+        collapsed = !collapsed;
+        cardsWrap.style.display = collapsed ? 'none' : 'grid';
       });
       appEl.appendChild(gh);
       appEl.appendChild(cardsWrap);
       for (const t of g.items) cardsWrap.appendChild(renderCard(t));
     }
-    if (trades.length === 0) {
+  }
+
+  function renderCalendarView(calendarData) {
+    const { months } = calendarData;
+    if (!months.length) {
+      const note = document.createElement('div');
+      note.className = 'note calendar-note';
+      note.textContent = 'No dated trades for this calendar view yet.';
+      appEl.appendChild(note);
+      return;
+    }
+    const calendar = document.createElement('div');
+    calendar.className = 'calendar';
+    for (const month of months) {
+      const monthEl = document.createElement('section');
+      monthEl.className = 'calendar-month';
+      const title = document.createElement('div');
+      title.className = 'calendar-month-title';
+      title.textContent = month.label;
+      monthEl.appendChild(title);
+      const labelsRow = document.createElement('div');
+      labelsRow.className = 'calendar-week calendar-week--labels';
+      for (const label of WEEKDAY_NAMES) {
+        const cell = document.createElement('div');
+        cell.className = 'calendar-weekday';
+        cell.textContent = label;
+        labelsRow.appendChild(cell);
+      }
+      monthEl.appendChild(labelsRow);
+      for (const week of month.weeks) {
+        const weekEl = document.createElement('div');
+        weekEl.className = 'calendar-week';
+        for (const day of week) {
+          weekEl.appendChild(createCalendarDay(day));
+        }
+        monthEl.appendChild(weekEl);
+      }
+      calendar.appendChild(monthEl);
+    }
+    appEl.appendChild(calendar);
+  }
+
+  function createCalendarDay(day) {
+    const dayEl = document.createElement('div');
+    dayEl.className = 'calendar-day';
+    if (!day.isCurrentMonth) dayEl.classList.add('calendar-day--muted');
+    if (day.isToday) dayEl.classList.add('calendar-day--today');
+    const head = document.createElement('button');
+    head.type = 'button';
+    head.className = 'calendar-day-head';
+    head.title = day.date.toLocaleDateString();
+    const number = document.createElement('span');
+    number.className = 'calendar-day-number';
+    number.textContent = day.date.getDate();
+    head.appendChild(number);
+    if (day.trades.length > 0) {
+      const count = document.createElement('span');
+      count.className = 'calendar-day-count';
+      count.textContent = `${day.trades.length} ${day.trades.length === 1 ? 'trade' : 'trades'}`;
+      head.appendChild(count);
+      const caret = document.createElement('span');
+      caret.className = 'calendar-day-caret';
+      caret.textContent = '▾';
+      head.appendChild(caret);
+    } else {
+      const placeholder = document.createElement('span');
+      placeholder.className = 'calendar-day-count';
+      placeholder.textContent = '—';
+      head.appendChild(placeholder);
+    }
+    dayEl.appendChild(head);
+    const content = document.createElement('div');
+    content.className = 'calendar-day-cards cards';
+    content.style.display = 'none';
+    dayEl.appendChild(content);
+    if (day.trades.length === 0) {
+      dayEl.classList.add('calendar-day--empty');
+      head.disabled = true;
+      return dayEl;
+    }
+    let rendered = false;
+    head.addEventListener('click', () => {
+      const willOpen = !dayEl.classList.contains('calendar-day--open');
+      dayEl.classList.toggle('calendar-day--open', willOpen);
+      if (willOpen) {
+        if (!rendered) {
+          for (const trade of day.trades) {
+            content.appendChild(renderCard(trade));
+          }
+          rendered = true;
+        }
+        content.style.display = 'grid';
+      } else {
+        content.style.display = 'none';
+      }
+    });
+    return dayEl;
+  }
+
+  function render() {
+    summarize();
+    const arr = filteredSortedTrades();
+    clearApp();
+    const mode = groupByEl.value;
+    if (mode === 'day' || mode === 'week') {
+      const calendarData = buildCalendarView(arr);
+      renderCalendarView(calendarData);
+      if (calendarData.undated.length) {
+        renderGroupedList([{ key: 'Undated', items: calendarData.undated }]);
+      }
+    } else {
+      const groups = groupTrades(arr);
+      renderGroupedList(groups);
+    }
+    if (trades.length === 0 && !appEl.querySelector('.note')) {
       const empty = document.createElement('div');
       empty.className = 'note';
       empty.textContent = 'No trades yet. Click “Add trade” to log your market wizardry.';
