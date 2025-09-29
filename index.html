@@ -130,11 +130,41 @@
     .calendar-day--open .calendar-day-caret { transform: rotate(180deg); }
     .calendar-day-cards { display: grid; gap: 8px; }
     .calendar-day-cards.cards { margin-top: 0; }
+    .calendar-day-detail {
+      border: 2px solid var(--ink);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: 0 18px 32px var(--shadow);
+      padding: 16px;
+      margin-bottom: 24px;
+      display: grid;
+      gap: 12px;
+      position: sticky;
+      top: 112px;
+      z-index: 4;
+    }
+    .calendar-day-detail-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .calendar-day-detail-info { display: flex; flex-direction: column; gap: 6px; }
+    .calendar-day-detail-title { font-weight: 700; font-size: 18px; }
+    .calendar-day-detail-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .calendar-day-detail-cards { display: grid; gap: 8px; }
+    .calendar-day-detail-close { flex-shrink: 0; }
     .calendar-note { margin-top: 12px; }
     @media (max-width: 640px) {
       .calendar-week { gap: 6px; }
       .calendar-day { min-height: 96px; padding: 6px; }
       .calendar-day-count { font-size: 11px; }
+    }
+    @media (max-width: 720px) {
+      .calendar-day-detail {
+        position: static;
+        top: auto;
+      }
     }
     .card { border: 2px solid var(--ink); border-radius: var(--radius); background: var(--panel); padding: 12px; display: grid; gap: 8px; font-size: 14px; }
     .card-header { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
@@ -677,6 +707,78 @@
     }
   }
 
+  function createDayDetailPanel() {
+    const panel = document.createElement('section');
+    panel.className = 'calendar-day-detail hidden';
+    const head = document.createElement('div');
+    head.className = 'calendar-day-detail-head';
+    const info = document.createElement('div');
+    info.className = 'calendar-day-detail-info';
+    const title = document.createElement('div');
+    title.className = 'calendar-day-detail-title';
+    const meta = document.createElement('div');
+    meta.className = 'calendar-day-detail-meta';
+    info.appendChild(title);
+    info.appendChild(meta);
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'calendar-day-detail-close';
+    closeBtn.textContent = 'Close';
+    head.appendChild(info);
+    head.appendChild(closeBtn);
+    const cardsWrap = document.createElement('div');
+    cardsWrap.className = 'calendar-day-detail-cards cards';
+    panel.appendChild(head);
+    panel.appendChild(cardsWrap);
+
+    let onClose = null;
+
+    function hide(trigger = true) {
+      if (panel.classList.contains('hidden')) return;
+      panel.classList.add('hidden');
+      title.textContent = '';
+      meta.innerHTML = '';
+      cardsWrap.innerHTML = '';
+      if (trigger && typeof onClose === 'function') onClose();
+    }
+
+    closeBtn.addEventListener('click', () => hide(true));
+
+    function show(day) {
+      title.textContent = day.date.toLocaleDateString(undefined, {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+      meta.innerHTML = '';
+      const count = document.createElement('span');
+      count.className = 'calendar-day-count';
+      count.textContent = `${day.trades.length} ${day.trades.length === 1 ? 'trade' : 'trades'}`;
+      meta.appendChild(count);
+      const netReturn = day.summary?.netReturn ?? null;
+      const fractional = day.summary?.fractional ?? null;
+      const returns = document.createElement('span');
+      returns.className = 'calendar-day-returns';
+      const netReturnCls = netReturn == null ? 'muted' : (netReturn >= 0 ? 'good' : 'bad');
+      const fractionalCls = fractional == null ? 'muted' : (fractional >= 0 ? 'good' : 'bad');
+      returns.appendChild(spanClass(currency(netReturn), netReturnCls));
+      returns.appendChild(spanClass(fmtPct(fractional), fractionalCls));
+      meta.appendChild(returns);
+      cardsWrap.innerHTML = '';
+      for (const trade of day.trades) cardsWrap.appendChild(renderCard(trade));
+      panel.classList.remove('hidden');
+      panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    return {
+      container: panel,
+      show,
+      hide,
+      setOnClose(fn) { onClose = fn; },
+    };
+  }
+
   function renderCalendarView(calendarData) {
     const { months } = calendarData;
     if (!months.length) {
@@ -686,8 +788,11 @@
       appEl.appendChild(note);
       return;
     }
+    const detail = createDayDetailPanel();
     const calendar = document.createElement('div');
     calendar.className = 'calendar';
+    const state = { activeDayEl: null };
+    appEl.appendChild(detail.container);
     for (const month of months) {
       const monthEl = document.createElement('section');
       monthEl.className = 'calendar-month';
@@ -708,7 +813,7 @@
         const weekEl = document.createElement('div');
         weekEl.className = 'calendar-week';
         for (const day of week) {
-          weekEl.appendChild(createCalendarDay(day));
+          weekEl.appendChild(createCalendarDay(day, detail, state));
         }
         monthEl.appendChild(weekEl);
       }
@@ -717,7 +822,7 @@
     appEl.appendChild(calendar);
   }
 
-  function createCalendarDay(day) {
+  function createCalendarDay(day, detail, state) {
     const dayEl = document.createElement('div');
     dayEl.className = 'calendar-day';
     if (!day.isCurrentMonth) dayEl.classList.add('calendar-day--muted');
@@ -726,6 +831,7 @@
     head.type = 'button';
     head.className = 'calendar-day-head';
     head.title = day.date.toLocaleDateString();
+    head.setAttribute('aria-expanded', 'false');
     const number = document.createElement('span');
     number.className = 'calendar-day-number';
     number.textContent = day.date.getDate();
@@ -758,30 +864,34 @@
       head.appendChild(placeholder);
     }
     dayEl.appendChild(head);
-    const content = document.createElement('div');
-    content.className = 'calendar-day-cards cards';
-    content.style.display = 'none';
-    dayEl.appendChild(content);
     if (day.trades.length === 0) {
       dayEl.classList.add('calendar-day--empty');
       head.disabled = true;
       return dayEl;
     }
-    let rendered = false;
     head.addEventListener('click', () => {
-      const willOpen = !dayEl.classList.contains('calendar-day--open');
-      dayEl.classList.toggle('calendar-day--open', willOpen);
-      if (willOpen) {
-        if (!rendered) {
-          for (const trade of day.trades) {
-            content.appendChild(renderCard(trade));
-          }
-          rendered = true;
-        }
-        content.style.display = 'grid';
-      } else {
-        content.style.display = 'none';
+      const alreadyActive = state.activeDayEl === dayEl;
+      if (state.activeDayEl && state.activeDayEl !== dayEl) {
+        const prevHead = state.activeDayEl.querySelector('.calendar-day-head');
+        if (prevHead) prevHead.setAttribute('aria-expanded', 'false');
+        state.activeDayEl.classList.remove('calendar-day--open');
+        state.activeDayEl = null;
       }
+      if (alreadyActive) {
+        detail.hide();
+        return;
+      }
+      state.activeDayEl = dayEl;
+      dayEl.classList.add('calendar-day--open');
+      head.setAttribute('aria-expanded', 'true');
+      detail.setOnClose(() => {
+        if (state.activeDayEl === dayEl) {
+          state.activeDayEl = null;
+        }
+        dayEl.classList.remove('calendar-day--open');
+        head.setAttribute('aria-expanded', 'false');
+      });
+      detail.show(day);
     });
     return dayEl;
   }
