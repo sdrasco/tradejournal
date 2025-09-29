@@ -202,10 +202,9 @@
           <option value="fractional">Fractional return ↑</option>
           <option value="-rating">Rating (best first)</option>
         </select>
-        <select id="groupBy" title="Group">
-          <option value="day" selected>Group: Day</option>
-          <option value="none">Group: None</option>
-          <option value="week">Group: Week</option>
+        <select id="viewMode" title="View">
+          <option value="month" selected>View: Month</option>
+          <option value="week">View: Week</option>
         </select>
       </div>
       <div class="right-tools">
@@ -399,7 +398,7 @@
   const metricExposure = document.getElementById('metric-exposure');
   const searchEl = document.getElementById('search');
   const sortByEl = document.getElementById('sortBy');
-  const groupByEl = document.getElementById('groupBy');
+  const viewModeEl = document.getElementById('viewMode');
   const addBtn = document.getElementById('addBtn');
   const exportBtn = document.getElementById('exportBtn');
   const importBtn = document.getElementById('importBtn');
@@ -612,12 +611,12 @@
   }
 
   function groupTrades(arr) {
-    const mode = groupByEl.value;
-    if (mode === 'none') return [{ key: 'All trades', items: arr }];
+    const mode = viewModeEl.value;
+    if (mode !== 'week') return [{ key: 'All trades', items: arr }];
     const map = new Map();
     for (const t of arr) {
       const dt = t.buyTime ? new Date(t.buyTime) : null;
-      const key = !dt ? 'Undated' : (mode === 'day' ? isoDate(dt) : weekKey(dt));
+      const key = !dt ? 'Undated' : weekKey(dt);
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(t);
     }
@@ -751,8 +750,8 @@
     summarize();
     const arr = filteredSortedTrades();
     clearApp();
-    const mode = groupByEl.value;
-    if (mode === 'day' || mode === 'week') {
+    const mode = viewModeEl.value;
+    if (mode === 'month') {
       const calendarData = buildCalendarView(arr);
       renderCalendarView(calendarData);
       if (calendarData.undated.length) {
@@ -1031,7 +1030,7 @@
   typeEl.addEventListener('change', updateTypeUI);
   searchEl.addEventListener('input', render);
   sortByEl.addEventListener('change', render);
-  groupByEl.addEventListener('change', render);
+  viewModeEl.addEventListener('change', render);
   exportBtn.addEventListener('click', exportJSON);
   importBtn.addEventListener('click', () => importFile.click());
   importFile.addEventListener('change', (e) => { const f = e.target.files?.[0]; if (f) importJSON(f); importFile.value=''; });
