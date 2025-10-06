@@ -1,0 +1,766 @@
+
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Beta₄₅ Project — Dashboard (Light/Dark)</title>
+<style>
+:root{
+  --radius:14px;
+  --shadow-dark:0 10px 20px rgba(0,0,0,.35);
+  --shadow-light:0 6px 14px rgba(0,0,0,.08);
+}
+
+/* DARK THEME */
+:root.dark{
+  --bg:#0b0f14;
+  --card:#0f172a;
+  --ink:#e5e7eb;
+  --muted:#9aa5b1;
+  --accent:#60a5fa;
+  --accent-2:#a78bfa;
+  --ok:#22c55e;
+  --warn:#fbbf24;
+  --border:#1f2937;
+  --shadow:var(--shadow-dark);
+}
+
+/* LIGHT THEME */
+:root.light{
+  --bg:#f6f8fb;
+  --card:#ffffff;
+  --ink:#243447;
+  --muted:#5f6c7b;
+  --accent:#4a90e2;
+  --accent-2:#8e44ad;
+  --ok:#2ecc71;
+  --warn:#ffca2c;
+  --border:#e3e8f0;
+  --shadow:var(--shadow-light);
+}
+
+*{box-sizing:border-box}
+html{ background:var(--bg); }
+body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+  color:var(--ink);
+}
+.app{
+  max-width:1100px;
+  margin:32px auto 80px;
+  padding:0 20px;
+}
+.topbar{
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:16px;
+}
+h1{ font-size:24px; margin:0 0 8px 0;}
+.subtitle{ color:var(--muted); margin-bottom:8px;}
+.tabs{ display:flex; gap:10px; flex-wrap:wrap; }
+.tab{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:999px;
+  padding:8px 14px;
+  box-shadow:var(--shadow);
+  cursor:pointer;
+  font-weight:600;
+  color:var(--ink);
+}
+.tab.active{ background:linear-gradient(180deg, var(--accent), #1d4ed8); color:white; border-color:#1d4ed8; }
+.panel{ margin-top:16px; }
+.controls{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+button, .button{
+  background:linear-gradient(180deg, var(--accent), #1d4ed8);
+  color:white;
+  border:1px solid #1d4ed8;
+  padding:8px 12px;
+  border-radius:10px;
+  font-weight:600;
+  cursor:pointer;
+  box-shadow:var(--shadow);
+}
+button.secondary{
+  background:var(--card);
+  color:var(--ink);
+  border:1px solid var(--border);
+}
+input[type="file"]{ display:none; }
+
+.phase{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:20px;
+  margin-bottom:18px;
+  display:none;
+}
+.phase.active{ display:block; }
+
+.phase-head{
+  display:flex; justify-content:space-between; align-items:center; gap:16px;
+  border-bottom:1px dashed var(--border); padding-bottom:12px; margin-bottom:12px;
+}
+.phase-head h2{ margin:0 0 4px 0; font-size:20px;}
+.phase-head .date{ color:var(--muted); font-size:14px; }
+.tags{ margin-top:6px; }
+.pill{
+  display:inline-block; padding:4px 10px; border-radius:999px;
+  background:rgba(100,160,255,.12); border:1px solid rgba(100,160,255,.35); color:var(--ink); font-size:12px; margin-right:6px;
+}
+
+/* Problem tab specific layout */
+.problem-grid{
+  display:grid; grid-template-columns:1fr; gap:14px;
+}
+@media (min-width: 880px){
+  .problem-grid{ grid-template-columns:1.2fr .8fr; }
+}
+.card{ border:1px solid var(--border); border-radius:12px; padding:16px; background:rgba(0,0,0,.02); }
+.problem p, .problem li{ color:var(--ink); }
+.problem ul{ margin-top:6px; }
+
+/* One-column section layout for other tabs */
+.sections.onecol{ display:flex; flex-direction:column; gap:14px; }
+.section-card{
+  border:1px solid var(--border); border-radius:12px; padding:14px;
+  background:rgba(0,0,0,.02);
+}
+.section-header{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px; }
+.section-header h3{ margin:0; font-size:16px; }
+.mark-all{ background:var(--card); color:var(--ink); border:1px solid var(--border); }
+.tasklist{ margin:8px 0 8px 0; padding-left:2px; list-style:none; }
+.tasklist li{ margin:8px 0; color:var(--ink); }
+.tasklist input[type="checkbox"]{ margin-right:8px; transform:translateY(1px); }
+
+.notes-label{ display:block; font-weight:600; font-size:12px; color:var(--muted); }
+textarea.notes{
+  width:100%; border:1px solid var(--border); border-radius:8px; padding:8px;
+  background:transparent; color:var(--ink); resize:vertical;
+}
+
+.overall-notes{ margin-top:12px; }
+
+.footer{
+  position:fixed; left:0; right:0; bottom:0; padding:10px 16px; background:rgba(0,0,0,.08);
+  border-top:1px solid var(--border); display:flex; gap:10px; justify-content:center; flex-wrap:wrap;
+  backdrop-filter: blur(6px);
+  color:var(--ink);
+}
+.small{ font-size:12px; color:var(--muted); }
+
+/* Print-friendly: expand all */
+@media print{
+  .tabs, .footer{ display:none; }
+  .phase{ display:block !important; break-inside:avoid; box-shadow:none; border:none; background:white; color:black; }
+}
+
+/* Progress bars */
+.progress{
+  display:grid;
+  grid-template-columns:240px auto;
+  align-items:center;
+  gap:8px;
+}
+.progress .bar{
+  height:10px;
+  width:0%;
+  border-radius:999px;
+  background:linear-gradient(90deg, var(--accent), var(--ok));
+  border:1px solid var(--border);
+  box-shadow:var(--shadow);
+  transition:width .35s ease;
+}
+.progress .pct{
+  font-weight:700;
+  font-size:12px;
+  color:var(--muted);
+}
+
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div>
+        <h1>Beta₄₅ Project — Dashboard</h1>
+        <div class="subtitle">Offline autosave for notes & checkboxes.</div>
+      </div>
+      <div class="controls">
+        <button id="themeBtn" class="secondary" title="Toggle light/dark theme">Toggle Theme</button>
+        <button id="exportBtn" title="Export tickboxes and notes to JSON">Export</button>
+        <label class="button secondary" for="importFile" title="Import JSON to restore progress">Import</label>
+        <input type="file" id="importFile" accept="application/json"/>
+        <button id="resetBtn" class="secondary" title="Clear all saved notes and tickboxes">Reset</button>
+      </div>
+    </div>
+
+    <div class="tabs" role="tablist" aria-label="Phases">
+      <div class="tab active" data-target="p0" role="tab" aria-selected="true">Problem</div>
+      <div class="tab" data-target="p1" role="tab" aria-selected="false">Phase 1</div>
+      <div class="tab" data-target="p2" role="tab" aria-selected="false">Phase 2</div>
+      <div class="tab" data-target="p3" role="tab" aria-selected="false">Phase 3</div>
+      <div class="tab" data-target="p4" role="tab" aria-selected="false">Phase 4</div>
+    </div>
+
+    <div class="panel">
+      
+    <section class="phase problem" id="p0">
+        <header class="phase-head">
+            <div>
+                <h2>Problem — Project Brief</h2>
+                <div class="date">Context</div>
+                <div class='tags'><span class="pill">Overview</span> <span class="pill">Spec</span></div>
+            </div>
+            <div class="progress" id="p0-progress" style="display:none;">
+                <div class="bar"></div><span class="pct">0%</span>
+            </div>
+        </header>
+        <div class="problem-grid">
+            <div class="problem-left card">
+                
+<div class="problem">
+  <p><strong>Goal:</strong> Build a model that predicts the <em>future beta</em> of a stock to the S&amp;P 500 (SPY).</p>
+  <p><strong>Task:</strong> For each date <em>T</em>, forecast the <strong>45‑day forward‑looking beta</strong> computed from returns on days <em>T+1…T+45</em>. The dataset includes stocks (with SPY present) and fields like close price and volume. Make it easy to score new, out‑of‑sample datasets.</p>
+  <p><strong>Hints:</strong></p>
+  <ul>
+    <li>Beta = covariance / variance of percent changes in stock prices.</li>
+    <li>Start with <strong>MSE</strong> as the objective; feel free to experiment if justified.</li>
+    <li><code>pandas</code> <strong>rolling</strong> and <strong>shift</strong> are useful.</li>
+    <li><strong>Adjustment Factor</strong> is used to handle dividends and stock splits.</li>
+  </ul>
+</div>
+
+            </div>
+            <div class="problem-right card">
+                <label>Notes</label>
+                <textarea class="notes" rows="14" data-key="p0-overall-notes" placeholder="Questions, clarifications, decisions…"></textarea>
+            </div>
+        </div>
+    </section>
+    
+    <section class="phase" id="p1">
+        <header class="phase-head">
+            <div>
+                <h2>Phase 1 — Baseline Carry</h2>
+                <div class="date">Wednesday, 01 October 2025</div>
+                <div class='tags'><span class="pill">Phase 1</span> <span class="pill">No leakage</span> <span class="pill">Adjusted returns</span></div>
+            </div>
+            <div class="progress" id="p1-progress">
+                <div class="bar"></div><span class="pct">0%</span>
+            </div>
+        </header>
+        <div class="sections onecol">
+            
+        <div class="section-card">
+            <div class="section-header">
+                <h3>1) Project setup & data hygiene</h3>
+                <button class="mark-all" data-section="p1-s1">Mark section done</button>
+            </div>
+            <ul class="tasklist"><li><label><input type="checkbox" class="task" data-key="p1-s1-i1"> Load panel (stocks + SPY). Ensure unique (ticker, date), monotone dates, and intersected trading calendars.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p1-s1-i2"> Build adjusted close: verify whether adj_close = close × factor or close ÷ factor by spot-checking known split/dividend dates.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p1-s1-i3"> Create daily simple returns from adjusted closes for each ticker and for SPY. Do not forward-fill across missing days.</label></li></ul>
+            <label class="notes-label">Notes</label>
+            <textarea class="notes" rows="4" data-key="p1-s1-notes" placeholder="Jot notes, clarifications, or decisions…"></textarea>
+        </div>
+        
+        <div class="section-card">
+            <div class="section-header">
+                <h3>2) Labeling: forward 45‑day beta</h3>
+                <button class="mark-all" data-section="p1-s2">Mark section done</button>
+            </div>
+            <ul class="tasklist"><li><label><input type="checkbox" class="task" data-key="p1-s2-i1"> For each T, compute β(T+1…T+45) as OLS slope of stock returns on SPY returns with intercept.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p1-s2-i2"> Require ≥30 overlapping days; set label NaN if Var(SPY)=0 in the window.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p1-s2-i3"> Implementation hack: compute trailing 45‑day betas and shift −45 so the value ending at T+45 is assigned to T.</label></li></ul>
+            <label class="notes-label">Notes</label>
+            <textarea class="notes" rows="4" data-key="p1-s2-notes" placeholder="Jot notes, clarifications, or decisions…"></textarea>
+        </div>
+        
+        <div class="section-card">
+            <div class="section-header">
+                <h3>3) Baseline predictor: carry (with optional shrink)</h3>
+                <button class="mark-all" data-section="p1-s3">Mark section done</button>
+            </div>
+            <ul class="tasklist"><li><label><input type="checkbox" class="task" data-key="p1-s3-i1"> Feature at T: trailing 45‑day beta up to T from adjusted returns.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p1-s3-i2"> Prediction: use trailing β as the forecast; optionally apply fixed shrink toward 1 (e.g., β̂ = μ + (1−λ)(β−μ), with μ=1, λ≈0.1).</label></li>
+<li><label><input type="checkbox" class="task" data-key="p1-s3-i3"> Export per (ticker, date): predicted_beta_45d_baseline.</label></li></ul>
+            <label class="notes-label">Notes</label>
+            <textarea class="notes" rows="4" data-key="p1-s3-notes" placeholder="Jot notes, clarifications, or decisions…"></textarea>
+        </div>
+        
+        <div class="section-card">
+            <div class="section-header">
+                <h3>4) Validation & checks</h3>
+                <button class="mark-all" data-section="p1-s4">Mark section done</button>
+            </div>
+            <ul class="tasklist"><li><label><input type="checkbox" class="task" data-key="p1-s4-i1"> Chronological split with 45‑day embargo between train and test to avoid overlapping window leakage.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p1-s4-i2"> Metrics: MSE, MAE, and correlation(β̂, β₄₅). Confirm SPY’s predicted β≈1 to SPY.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p1-s4-i3"> Diagnostics: scatter of trailing vs forward β (persistence), error vs SPY volatility, sector breakdown if available.</label></li></ul>
+            <label class="notes-label">Notes</label>
+            <textarea class="notes" rows="4" data-key="p1-s4-notes" placeholder="Jot notes, clarifications, or decisions…"></textarea>
+        </div>
+        
+        <div class="section-card">
+            <div class="section-header">
+                <h3>5) Scoring pipeline</h3>
+                <button class="mark-all" data-section="p1-s5">Mark section done</button>
+            </div>
+            <ul class="tasklist"><li><label><input type="checkbox" class="task" data-key="p1-s5-i1"> Write a function: fit_baseline(df) → state (for shrink only).</label></li>
+<li><label><input type="checkbox" class="task" data-key="p1-s5-i2"> Write predict_baseline(new_df, state) → rows of (ticker, date, predicted_beta_45d).</label></li>
+<li><label><input type="checkbox" class="task" data-key="p1-s5-i3"> Save a minimal README describing conventions (simple returns, intercept OLS, alignment).</label></li></ul>
+            <label class="notes-label">Notes</label>
+            <textarea class="notes" rows="4" data-key="p1-s5-notes" placeholder="Jot notes, clarifications, or decisions…"></textarea>
+        </div>
+        
+        <div class="section-card">
+            <div class="section-header">
+                <h3>EOD deliverables (must-have)</h3>
+                <button class="mark-all" data-section="p1-s6">Mark section done</button>
+            </div>
+            <ul class="tasklist"><li><label><input type="checkbox" class="task" data-key="p1-s6-i1"> Notebook or script that produces labels and baseline predictions on the training/test split.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p1-s6-i2"> CSV: baseline_predictions.csv with columns [ticker, date, predicted_beta_45d].</label></li>
+<li><label><input type="checkbox" class="task" data-key="p1-s6-i3"> Brief validation snapshot (metrics + 2 plots).</label></li></ul>
+            <label class="notes-label">Notes</label>
+            <textarea class="notes" rows="4" data-key="p1-s6-notes" placeholder="Jot notes, clarifications, or decisions…"></textarea>
+        </div>
+        
+        </div>
+        <div class="overall-notes">
+            <label>Overall notes for this phase</label>
+            <textarea class="notes" rows="6" data-key="p1-overall-notes" placeholder="Summaries, findings, issues to carry forward…"></textarea>
+        </div>
+    </section>
+    
+
+    <section class="phase" id="p2">
+        <header class="phase-head">
+            <div>
+                <h2>Phase 2 — Regularized Carry (Multi‑Lookback)</h2>
+                <div class="date">Thursday, 02 October 2025</div>
+                <div class='tags'><span class="pill">Phase 2</span> <span class="pill">Smoothing</span> <span class="pill">Shrinkage</span></div>
+            </div>
+            <div class="progress" id="p2-progress">
+                <div class="bar"></div><span class="pct">0%</span>
+            </div>
+        </header>
+        <div class="sections onecol">
+            
+        <div class="section-card">
+            <div class="section-header">
+                <h3>1) Features: multi‑lookback trailing betas</h3>
+                <button class="mark-all" data-section="p2-s1">Mark section done</button>
+            </div>
+            <ul class="tasklist"><li><label><input type="checkbox" class="task" data-key="p2-s1-i1"> Compute trailing betas at T over windows {20, 45, 90}.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p2-s1-i2"> Add SPY regime features at T: realized vol(20,45), drawdown %, last 5‑day return.</label></li></ul>
+            <label class="notes-label">Notes</label>
+            <textarea class="notes" rows="4" data-key="p2-s1-notes" placeholder="Jot notes, clarifications, or decisions…"></textarea>
+        </div>
+        
+        <div class="section-card">
+            <div class="section-header">
+                <h3>2) Fit constant blend + shrink</h3>
+                <button class="mark-all" data-section="p2-s2">Mark section done</button>
+            </div>
+            <ul class="tasklist"><li><label><input type="checkbox" class="task" data-key="p2-s2-i1"> On an early training block, fit non‑negative weights w20,w45,w90 that minimize MSE to β₄₅ labels (with intercept in the label only).</label></li>
+<li><label><input type="checkbox" class="task" data-key="p2-s2-i2"> Apply a constant shrink toward 1: β̂ = 1 + (1−λ)·(w20·β20 + w45·β45 + w90·β90 − 1). Calibrate λ on the same block via CV.</label></li></ul>
+            <label class="notes-label">Notes</label>
+            <textarea class="notes" rows="4" data-key="p2-s2-notes" placeholder="Jot notes, clarifications, or decisions…"></textarea>
+        </div>
+        
+        <div class="section-card">
+            <div class="section-header">
+                <h3>3) Validation protocol</h3>
+                <button class="mark-all" data-section="p2-s3">Mark section done</button>
+            </div>
+            <ul class="tasklist"><li><label><input type="checkbox" class="task" data-key="p2-s3-i1"> Time‑blocked split with purge+embargo; freeze weights/λ from the training period and roll forward.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p2-s3-i2"> Compare MSE vs Day‑1 baseline; focus on low‑Var(SPY) periods where carry is unstable.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p2-s3-i3"> Track error by regime (SPY vol terciles).</label></li></ul>
+            <label class="notes-label">Notes</label>
+            <textarea class="notes" rows="4" data-key="p2-s3-notes" placeholder="Jot notes, clarifications, or decisions…"></textarea>
+        </div>
+        
+        <div class="section-card">
+            <div class="section-header">
+                <h3>4) Scoring function</h3>
+                <button class="mark-all" data-section="p2-s4">Mark section done</button>
+            </div>
+            <ul class="tasklist"><li><label><input type="checkbox" class="task" data-key="p2-s4-i1"> Implement fit_blend(df) → {w20,w45,w90,λ}.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p2-s4-i2"> Implement predict_blend(new_df, params) → predicted_beta_45d.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p2-s4-i3"> Unit‑test on a tiny panel to ensure identical results across platforms.</label></li></ul>
+            <label class="notes-label">Notes</label>
+            <textarea class="notes" rows="4" data-key="p2-s4-notes" placeholder="Jot notes, clarifications, or decisions…"></textarea>
+        </div>
+        
+        <div class="section-card">
+            <div class="section-header">
+                <h3>EOD deliverables</h3>
+                <button class="mark-all" data-section="p2-s5">Mark section done</button>
+            </div>
+            <ul class="tasklist"><li><label><input type="checkbox" class="task" data-key="p2-s5-i1"> CSV: blend_predictions.csv with [ticker, date, predicted_beta_45d].</label></li>
+<li><label><input type="checkbox" class="task" data-key="p2-s5-i2"> One‑page comparison to baseline: metrics table + small commentary on stability.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p2-s5-i3"> Persisted parameters JSON with learned weights & λ.</label></li></ul>
+            <label class="notes-label">Notes</label>
+            <textarea class="notes" rows="4" data-key="p2-s5-notes" placeholder="Jot notes, clarifications, or decisions…"></textarea>
+        </div>
+        
+        </div>
+        <div class="overall-notes">
+            <label>Overall notes for this phase</label>
+            <textarea class="notes" rows="6" data-key="p2-overall-notes" placeholder="Summaries, findings, issues to carry forward…"></textarea>
+        </div>
+    </section>
+    
+
+    <section class="phase" id="p3">
+        <header class="phase-head">
+            <div>
+                <h2>Phase 3 — Two‑Moment Forecast (Cov/Var)</h2>
+                <div class="date">Friday, 03 October 2025</div>
+                <div class='tags'><span class="pill">Phase 3</span> <span class="pill">Variance</span> <span class="pill">Covariance</span></div>
+            </div>
+            <div class="progress" id="p3-progress">
+                <div class="bar"></div><span class="pct">0%</span>
+            </div>
+        </header>
+        <div class="sections onecol">
+            
+        <div class="section-card">
+            <div class="section-header">
+                <h3>1) Labels & weights</h3>
+                <button class="mark-all" data-section="p3-s1">Mark section done</button>
+            </div>
+            <ul class="tasklist"><li><label><input type="checkbox" class="task" data-key="p3-s1-i1"> Keep β₄₅ forward label for evaluation.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p3-s1-i2"> Compute realized future SPY integrated variance over T+1…T+45; use as sample weights (higher weight when SPY var is larger).</label></li></ul>
+            <label class="notes-label">Notes</label>
+            <textarea class="notes" rows="4" data-key="p3-s1-notes" placeholder="Jot notes, clarifications, or decisions…"></textarea>
+        </div>
+        
+        <div class="section-card">
+            <div class="section-header">
+                <h3>2) Forecast SPY 45‑day variance</h3>
+                <button class="mark-all" data-section="p3-s2">Mark section done</button>
+            </div>
+            <ul class="tasklist"><li><label><input type="checkbox" class="task" data-key="p3-s2-i1"> Build a lightweight volatility model: EWMA (λ≈0.94) or simple HAR‑like regressors of squared returns.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p3-s2-i2"> Validate forecasts with out‑of‑sample R² and calibration plots (forecast vs realized).</label></li></ul>
+            <label class="notes-label">Notes</label>
+            <textarea class="notes" rows="4" data-key="p3-s2-notes" placeholder="Jot notes, clarifications, or decisions…"></textarea>
+        </div>
+        
+        <div class="section-card">
+            <div class="section-header">
+                <h3>3) Forecast covariance (or correlation)</h3>
+                <button class="mark-all" data-section="p3-s3">Mark section done</button>
+            </div>
+            <ul class="tasklist"><li><label><input type="checkbox" class="task" data-key="p3-s3-i1"> Features: recent β’s and correlations, idiosyncratic vol, SPY regime features, maybe sector dummy.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p3-s3-i2"> Model: small ridge/elastic‑net regression to predict future covariance or correlation; apply variance floor to avoid divide‑by‑tiny.</label></li></ul>
+            <label class="notes-label">Notes</label>
+            <textarea class="notes" rows="4" data-key="p3-s3-notes" placeholder="Jot notes, clarifications, or decisions…"></textarea>
+        </div>
+        
+        <div class="section-card">
+            <div class="section-header">
+                <h3>4) Compose β prediction and evaluate</h3>
+                <button class="mark-all" data-section="p3-s4">Mark section done</button>
+            </div>
+            <ul class="tasklist"><li><label><input type="checkbox" class="task" data-key="p3-s4-i1"> β̂₄₅ = Ĉov̂ / V̂ar̂(SPY).</label></li>
+<li><label><input type="checkbox" class="task" data-key="p3-s4-i2"> Use weighted MSE with weights ∝ realized future SPY variance.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p3-s4-i3"> Benchmark against Day‑1/Day‑2; analyze regime‑wise improvements.</label></li></ul>
+            <label class="notes-label">Notes</label>
+            <textarea class="notes" rows="4" data-key="p3-s4-notes" placeholder="Jot notes, clarifications, or decisions…"></textarea>
+        </div>
+        
+        <div class="section-card">
+            <div class="section-header">
+                <h3>5) Scoring pipeline</h3>
+                <button class="mark-all" data-section="p3-s5">Mark section done</button>
+            </div>
+            <ul class="tasklist"><li><label><input type="checkbox" class="task" data-key="p3-s5-i1"> fit_two_moment(df) → params for SPY‑var and cov/corr models.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p3-s5-i2"> predict_two_moment(new_df, params) → predicted_beta_45d.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p3-s5-i3"> Document assumptions (variance floor, weights) in README.</label></li></ul>
+            <label class="notes-label">Notes</label>
+            <textarea class="notes" rows="4" data-key="p3-s5-notes" placeholder="Jot notes, clarifications, or decisions…"></textarea>
+        </div>
+        
+        <div class="section-card">
+            <div class="section-header">
+                <h3>EOD deliverables</h3>
+                <button class="mark-all" data-section="p3-s6">Mark section done</button>
+            </div>
+            <ul class="tasklist"><li><label><input type="checkbox" class="task" data-key="p3-s6-i1"> CSV: two_moment_predictions.csv with [ticker, date, predicted_beta_45d].</label></li>
+<li><label><input type="checkbox" class="task" data-key="p3-s6-i2"> Metrics & plots comparing all three approaches (baseline, blend, two‑moment).</label></li>
+<li><label><input type="checkbox" class="task" data-key="p3-s6-i3"> Short note on when two‑moment helps (and when it doesn’t).</label></li></ul>
+            <label class="notes-label">Notes</label>
+            <textarea class="notes" rows="4" data-key="p3-s6-notes" placeholder="Jot notes, clarifications, or decisions…"></textarea>
+        </div>
+        
+        </div>
+        <div class="overall-notes">
+            <label>Overall notes for this phase</label>
+            <textarea class="notes" rows="6" data-key="p3-overall-notes" placeholder="Summaries, findings, issues to carry forward…"></textarea>
+        </div>
+    </section>
+    
+
+    <section class="phase" id="p4">
+        <header class="phase-head">
+            <div>
+                <h2>Phase 4 — Distillation (Teacher–Student)</h2>
+                <div class="date">Saturday, 04 October 2025</div>
+                <div class='tags'><span class="pill">Phase 4</span> <span class="pill">Distillation</span> <span class="pill">No leakage</span></div>
+            </div>
+            <div class="progress" id="p4-progress">
+                <div class="bar"></div><span class="pct">0%</span>
+            </div>
+        </header>
+        <div class="sections onecol">
+            
+        <div class="section-card">
+            <div class="section-header">
+                <h3>1) Fold design & leakage control</h3>
+                <button class="mark-all" data-section="p4-s1">Mark section done</button>
+            </div>
+            <ul class="tasklist"><li><label><input type="checkbox" class="task" data-key="p4-s1-i1"> Use purged time‑series CV: split into K chronological folds; for each test block, drop a 45‑day purge on both sides and add a 45‑day embargo after the test block.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p4-s1-i2"> Freeze all hyperparameters inside each training fold; never touch future data to set them.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p4-s1-i3"> Record fold date ranges in a table for reproducibility.</label></li></ul>
+            <label class="notes-label">Notes</label>
+            <textarea class="notes" rows="4" data-key="p4-s1-notes" placeholder="Jot notes, clarifications, or decisions…"></textarea>
+        </div>
+        
+        <div class="section-card">
+            <div class="section-header">
+                <h3>2) Build the teacher (train‑fold only)</h3>
+                <button class="mark-all" data-section="p4-s2">Mark section done</button>
+            </div>
+            <ul class="tasklist"><li><label><input type="checkbox" class="task" data-key="p4-s2-i1"> Within the current training fold, compute a centered 91‑day beta β̂₉₁(T) using returns from T−45…T+45 (OLS with intercept; min 60 points; robust to outliers if desired via Huber).</label></li>
+<li><label><input type="checkbox" class="task" data-key="p4-s2-i2"> Ensure the 91‑day window stays strictly inside the training fold; otherwise mark teacher(T)=NaN (no peeking across fold boundaries).</label></li>
+<li><label><input type="checkbox" class="task" data-key="p4-s2-i3"> Optional: EWMA‑weighted variant (λ≈0.97) to emphasize proximity to T; compare stability.</label></li></ul>
+            <label class="notes-label">Notes</label>
+            <textarea class="notes" rows="4" data-key="p4-s2-notes" placeholder="Jot notes, clarifications, or decisions…"></textarea>
+        </div>
+        
+        <div class="section-card">
+            <div class="section-header">
+                <h3>3) Student features & model (≤ T only)</h3>
+                <button class="mark-all" data-section="p4-s3">Mark section done</button>
+            </div>
+            <ul class="tasklist"><li><label><input type="checkbox" class="task" data-key="p4-s3-i1"> Features at T: trailing betas {10,20,45,90}, trailing corr {20,45}, realized vol {20,45}, idio vol (σ_idio from residuals), turnover proxies, SPY regime (vol, drawdown), optional sector dummies.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p4-s3-i2"> Standardize features on the training fold only; impute inside‑fold only.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p4-s3-i3"> Model candidates: ridge/elastic‑net regression (primary), small gradient‑boosted trees (secondary). Optimize regularization by inner time‑blocked CV on the training fold.</label></li></ul>
+            <label class="notes-label">Notes</label>
+            <textarea class="notes" rows="4" data-key="p4-s3-notes" placeholder="Jot notes, clarifications, or decisions…"></textarea>
+        </div>
+        
+        <div class="section-card">
+            <div class="section-header">
+                <h3>4) Distillation mapping to forward β₄₅</h3>
+                <button class="mark-all" data-section="p4-s4">Mark section done</button>
+            </div>
+            <ul class="tasklist"><li><label><input type="checkbox" class="task" data-key="p4-s4-i1"> First, train the student to predict the teacher β̂₉₁(T).</label></li>
+<li><label><input type="checkbox" class="task" data-key="p4-s4-i2"> Then, calibrate a mapping from student(T) to forward β₄₅(T): fit β₄₅(T) ≈ a + b·student(T) + c·SPY_vol(T) on the training fold; freeze (a,b,c).</label></li>
+<li><label><input type="checkbox" class="task" data-key="p4-s4-i3"> Rationale: teacher approximates instantaneous β; mapping handles drift from ‘now’ to the next 45 days.</label></li></ul>
+            <label class="notes-label">Notes</label>
+            <textarea class="notes" rows="4" data-key="p4-s4-notes" placeholder="Jot notes, clarifications, or decisions…"></textarea>
+        </div>
+        
+        <div class="section-card">
+            <div class="section-header">
+                <h3>5) Validation & diagnostics</h3>
+                <button class="mark-all" data-section="p4-s5">Mark section done</button>
+            </div>
+            <ul class="tasklist"><li><label><input type="checkbox" class="task" data-key="p4-s5-i1"> Evaluate on each test fold using the true forward β₄₅ label (not the teacher). Report MSE/MAE/corr and weighted‑MSE with weights ∝ realized SPY variance.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p4-s5-i2"> Compare against Phases 1–3; check regime performance (low/med/high SPY vol), and SPY/sector ETF sanity (β̂≈1 to SPY).</label></li>
+<li><label><input type="checkbox" class="task" data-key="p4-s5-i3"> Stability checks: fold‑to‑fold parameter drift; residuals vs Var(SPY); error distribution tails.</label></li></ul>
+            <label class="notes-label">Notes</label>
+            <textarea class="notes" rows="4" data-key="p4-s5-notes" placeholder="Jot notes, clarifications, or decisions…"></textarea>
+        </div>
+        
+        <div class="section-card">
+            <div class="section-header">
+                <h3>6) Scoring pipeline</h3>
+                <button class="mark-all" data-section="p4-s6">Mark section done</button>
+            </div>
+            <ul class="tasklist"><li><label><input type="checkbox" class="task" data-key="p4-s6-i1"> fit_distilled(df) → {feature scalers, student params, mapping coefficients, metadata}.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p4-s6-i2"> predict_distilled(new_df, params) → predicted_beta_45d using only ≤ T features (no teacher at inference).</label></li>
+<li><label><input type="checkbox" class="task" data-key="p4-s6-i3"> Export model card (JSON) with feature list, hyperparams, and date ranges used for training.</label></li></ul>
+            <label class="notes-label">Notes</label>
+            <textarea class="notes" rows="4" data-key="p4-s6-notes" placeholder="Jot notes, clarifications, or decisions…"></textarea>
+        </div>
+        
+        <div class="section-card">
+            <div class="section-header">
+                <h3>EOD deliverables</h3>
+                <button class="mark-all" data-section="p4-s7">Mark section done</button>
+            </div>
+            <ul class="tasklist"><li><label><input type="checkbox" class="task" data-key="p4-s7-i1"> CSV: distilled_predictions.csv with [ticker, date, predicted_beta_45d].</label></li>
+<li><label><input type="checkbox" class="task" data-key="p4-s7-i2"> JSON: distilled_model.json (scalers + coefficients/hyperparams + mapping).</label></li>
+<li><label><input type="checkbox" class="task" data-key="p4-s7-i3"> 1‑pager: metrics vs Phases 1–3, calibration plot (student vs teacher), and error‑by‑regime chart.</label></li></ul>
+            <label class="notes-label">Notes</label>
+            <textarea class="notes" rows="4" data-key="p4-s7-notes" placeholder="Jot notes, clarifications, or decisions…"></textarea>
+        </div>
+        
+        <div class="section-card">
+            <div class="section-header">
+                <h3>Stretch goals (optional)</h3>
+                <button class="mark-all" data-section="p4-s8">Mark section done</button>
+            </div>
+            <ul class="tasklist"><li><label><input type="checkbox" class="task" data-key="p4-s8-i1"> Blend the distilled forecast with Phase‑2 using Granger–Ramanathan combining on a training block.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p4-s8-i2"> Add Fieller‑aware variance floor tuning for stability when Var(SPY) is tiny.</label></li>
+<li><label><input type="checkbox" class="task" data-key="p4-s8-i3"> Quantify uncertainty via bootstrap over folds; report 80% PI for β̂₄₅.</label></li></ul>
+            <label class="notes-label">Notes</label>
+            <textarea class="notes" rows="4" data-key="p4-s8-notes" placeholder="Jot notes, clarifications, or decisions…"></textarea>
+        </div>
+        
+        </div>
+        <div class="overall-notes">
+            <label>Overall notes for this phase</label>
+            <textarea class="notes" rows="6" data-key="p4-overall-notes" placeholder="Summaries, findings, issues to carry forward…"></textarea>
+        </div>
+    </section>
+    
+    </div>
+  </div>
+
+  <div class="footer small">
+    Tip: keep all feature engineering ≤ T. Create labels only after rolling windows, then shift −45. Use purge + 45‑day embargo for validation.
+  </div>
+
+<script>
+(function(){
+  const STORE_STATE = "beta45_hw_state_v3";
+  const STORE_THEME = "beta45_theme_v1";
+  let state = loadState(STORE_STATE) || {};
+
+  // THEME
+  const htmlEl = document.documentElement;
+  function applyTheme(t){
+    htmlEl.classList.remove("dark","light");
+    htmlEl.classList.add(t);
+    saveState(STORE_THEME, t);
+    document.getElementById("themeBtn").textContent = (t==="dark" ? "Light theme" : "Dark theme");
+  }
+  const initial = loadState(STORE_THEME) || "dark";
+  applyTheme(initial);
+  document.getElementById("themeBtn").addEventListener("click", () => {
+    const next = htmlEl.classList.contains("dark") ? "light" : "dark";
+    applyTheme(next);
+  });
+
+  // Tabs
+  const tabs = document.querySelectorAll(".tab");
+  const phases = document.querySelectorAll(".phase");
+  function showPhase(id){
+    phases.forEach(p => p.classList.toggle("active", p.id===id));
+    tabs.forEach(t => t.classList.toggle("active", t.dataset.target===id));
+  }
+  tabs.forEach(t => t.addEventListener("click", () => showPhase(t.dataset.target)));
+  showPhase("p0");
+
+  // Restore inputs
+  document.querySelectorAll("input.task").forEach(inp => {
+    const k = inp.dataset.key;
+    if (k in state) inp.checked = !!state[k];
+    inp.addEventListener("change", () => {
+      state[k] = inp.checked;
+      saveState(STORE_STATE, state);
+      updateProgressFor(inp.closest(".phase").id);
+    });
+  });
+  document.querySelectorAll("textarea.notes").forEach(ta => {
+    const k = ta.dataset.key;
+    if (k in state) ta.value = state[k];
+    ta.addEventListener("input", () => {
+      state[k] = ta.value;
+      saveState(STORE_STATE, state);
+    });
+  });
+
+  // Mark-section-done buttons
+  document.querySelectorAll(".mark-all").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const prefix = btn.dataset.section + "-";
+      const phaseEl = btn.closest(".phase");
+      const checks = phaseEl.querySelectorAll('input.task[data-key^="'+prefix+'"]');
+      const allDone = Array.from(checks).every(c => c.checked);
+      checks.forEach(c => {
+        c.checked = !allDone;
+        state[c.dataset.key] = c.checked;
+      });
+      saveState(STORE_STATE, state);
+      updateProgressFor(phaseEl.id);
+    });
+  });
+
+  // Progress bars
+  function updateProgressFor(phaseId){
+    const phaseEl = document.getElementById(phaseId);
+    const allChecks = phaseEl.querySelectorAll("input.task");
+    const done = Array.from(allChecks).filter(c => c.checked).length;
+    const total = allChecks.length || 1;
+    const pct = Math.round((done/total)*100);
+    const prog = phaseEl.querySelector(".progress");
+    if (prog){
+      prog.querySelector(".bar").style.width = pct + "%";
+      prog.querySelector(".pct").textContent = pct + "%";
+    }
+  }
+  phases.forEach(p => updateProgressFor(p.id));
+
+  // Export / Import / Reset
+  document.getElementById("exportBtn").addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "beta45_homework_progress.json";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
+  });
+  const importFile = document.getElementById("importFile");
+  importFile.addEventListener("change", async () => {
+    const file = importFile.files[0];
+    if (!file) return;
+    try{
+      const text = await file.text();
+      const data = JSON.parse(text);
+      state = data;
+      saveState(STORE_STATE, state);
+      // refresh UI
+      document.querySelectorAll("input.task").forEach(inp => {
+        const k = inp.dataset.key;
+        if (k in state) inp.checked = !!state[k];
+      });
+      document.querySelectorAll("textarea.notes").forEach(ta => {
+        const k = ta.dataset.key;
+        if (k in state) ta.value = state[k];
+      });
+      phases.forEach(p => updateProgressFor(p.id));
+      alert("Import complete.");
+    }catch(e){
+      alert("Import failed: " + e.message);
+    }finally{
+      importFile.value = "";
+    }
+  });
+  document.getElementById("resetBtn").addEventListener("click", () => {
+    if (!confirm("Clear all saved notes and tickboxes?")) return;
+    localStorage.removeItem(STORE_STATE);
+    state = {};
+    document.querySelectorAll("input.task").forEach(inp => inp.checked = false);
+    document.querySelectorAll("textarea.notes").forEach(ta => ta.value = "");
+    phases.forEach(p => updateProgressFor(p.id));
+  });
+
+  function loadState(key){
+    try{ return JSON.parse(localStorage.getItem(key)); }catch(e){ return null; }
+  }
+  function saveState(key, obj){
+    try{ localStorage.setItem(key, JSON.stringify(obj)); }catch(e){/* ignore */}
+  }
+})();
+</script>
+</body>
+</html>
